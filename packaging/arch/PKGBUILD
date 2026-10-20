@@ -1,7 +1,7 @@
 # Maintainer: Tanmay Panda <tanmay404103@outlook.com>
 
 pkgname=msi-center
-pkgver=0.2.0
+pkgver=0.2.1
 pkgrel=1
 pkgdesc="Lightweight native replacement for MSI Center, driven by msi-ec"
 arch=('x86_64')

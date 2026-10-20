@@ -146,7 +146,7 @@ entry, icon, `msi-ec` group, udev rules and tmpfiles — and reloads udev on
 install:
 
 ```sh
-sudo pacman -U msi-center-0.2.0-1-x86_64.pkg.tar.zst
+sudo pacman -U msi-center-0.2.1-1-x86_64.pkg.tar.zst
 sudo usermod -aG msi-ec "$USER"   # log out / back in
 ```
 

@@ -1,0 +1,23 @@
+[package]
+name = "msi-center"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "msi-center"
+path = "src/main.rs"
+
+[dependencies]
+msi-core = { path = "../core" }
+# Software renderer only: no OpenGL/femtovg, no accessibility bridge, smaller
+# and lighter for a static dashboard UI.
+slint = { version = "1", default-features = false, features = [
+    "std",
+    "backend-winit-wayland",
+    "renderer-software",
+    "compat-1-2",
+] }
+
+[build-dependencies]
+slint-build = "1"

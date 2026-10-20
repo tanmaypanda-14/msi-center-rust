@@ -1,0 +1,7 @@
+target/
+.git/
+.cargo-home/
+*.zip
+*.exe
+*.appx
+*.appxbundle

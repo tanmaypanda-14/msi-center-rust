@@ -1,0 +1,36 @@
+name: msi-center-rust
+
+# Build happens in the container; the GUI runs on the host (it needs your
+# Wayland/X session and the real EC).
+#
+#   make build      build the image
+#   make check      cargo check
+#   make release    build the release binary into ./target
+#   make run        build + launch on the host
+
+x-dev: &dev
+  image: msi-center-rust:dev
+  working_dir: /work
+  environment:
+    # Keep the registry on the bind-mounted project dir so the container user
+    # owns it (named volumes arrive root-owned) and builds stay reproducible.
+    CARGO_HOME: /work/.cargo-home
+  volumes:
+    - .:/work
+    # host EC + battery, read-only, so parsing can be tested in-container
+    - /sys/devices/platform/msi-ec:/sys/devices/platform/msi-ec:ro
+    - /sys/class/power_supply:/sys/class/power_supply:ro
+    - /sys/class/leds:/sys/class/leds:ro
+    - /sys/class/hwmon:/sys/class/hwmon:ro
+
+services:
+  dev:
+    <<: *dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    command: sleep infinity
+    init: true

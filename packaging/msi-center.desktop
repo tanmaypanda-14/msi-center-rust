@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSI Center
+GenericName=Laptop Control Center
+Comment=Power mode, fan control and battery charge limit on MSI laptops
+Exec=msi-center
+Icon=msi-center
+Terminal=false
+Categories=System;Settings;HardwareSettings;
+Keywords=msi;fan;battery;thermal;ec;power;
+StartupWMClass=msi-center

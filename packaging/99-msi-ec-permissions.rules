@@ -1,0 +1,28 @@
+# Give the `msi-ec` group write access to the attributes this app uses.
+#
+# Install as /etc/udev/rules.d/99-msi-ec-permissions.rules and then:
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger --subsystem-match=platform     --action=add
+#   sudo udevadm trigger --subsystem-match=power_supply --action=add
+#   sudo udevadm trigger --subsystem-match=leds         --action=add
+
+# Fan mode, shift mode, cooler boost, webcam block, sensors.
+ACTION=="add", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
+  RUN+="/bin/chgrp -R msi-ec /sys/devices/platform/msi-ec", \
+  RUN+="/bin/chmod -R g+w /sys/devices/platform/msi-ec"
+
+# The raw EC (fan tachometer) lives in debugfs, which udev cannot see, so
+# apply the read-only group permissions from tmpfiles the moment the platform
+# device shows up (that also fixes the boot ordering).
+ACTION=="add", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
+  RUN+="/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/msi-ec.conf"
+
+# Battery charge thresholds.
+ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="BAT1", \
+  RUN+="/bin/chgrp -R msi-ec /sys/class/power_supply/BAT1", \
+  RUN+="/bin/chmod -R g+w /sys/class/power_supply/BAT1"
+
+# Keyboard backlight.
+ACTION=="add", SUBSYSTEM=="leds", KERNEL=="msiacpi::kbd_backlight", \
+  RUN+="/bin/chgrp msi-ec /sys/class/leds/msiacpi::kbd_backlight/brightness", \
+  RUN+="/bin/chmod g+w /sys/class/leds/msiacpi::kbd_backlight/brightness"

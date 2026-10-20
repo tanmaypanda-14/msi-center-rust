@@ -104,6 +104,11 @@ fn finish(ui: &AppWindow, backend: &dyn MsiControl, result: CoreResult<()>, ok: 
 }
 
 fn main() -> std::result::Result<(), slint::PlatformError> {
+    if std::env::args().skip(1).any(|a| a == "--version" || a == "-V") {
+        println!("msi-center {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
     let backend: Arc<Box<dyn MsiControl>> = Arc::new(default_backend());
 
     // Headless check: `msi-center --snapshot` prints what the app sees and exits.

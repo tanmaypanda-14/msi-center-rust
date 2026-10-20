@@ -9,6 +9,20 @@ binary instead of a .NET/WPF app, three services and a webview.
 No Windows support and no Windows code is reused: the hardware is driven
 through the in-tree `msi-ec` kernel driver plus battery/LED sysfs.
 
+## Install
+
+v0.1.0 ships as a single binary: see [Releases](https://github.com/tanmaypanda-14/msi-center-rust/releases).
+
+**A fresh machine needs more than the binary**: the `msi-ec` kernel driver, the
+`ec_sys` module for fan RPM, and udev rules so your user can write to the EC.
+All of it is covered step by step in **[INSTALL.md](INSTALL.md)**.
+
+```sh
+tar xf msi-center-0.1.0-x86_64-linux.tar.gz
+sudo install -Dm755 msi-center-0.1.0-x86_64-linux/msi-center /usr/local/bin/msi-center
+msi-center --snapshot      # should print backend msi-ec, not mock
+```
+
 ## Budgets
 
 | Metric | Target | Current |

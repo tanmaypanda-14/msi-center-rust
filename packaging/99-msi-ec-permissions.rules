@@ -15,7 +15,7 @@ ACTION=="add", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
 # apply the read-only group permissions from tmpfiles the moment the platform
 # device shows up (that also fixes the boot ordering).
 ACTION=="add", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
-  RUN+="/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/msi-ec.conf"
+  RUN+="/usr/bin/systemd-tmpfiles --create"
 
 # Battery charge thresholds.
 ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="BAT1", \

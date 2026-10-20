@@ -1,0 +1,62 @@
+# Maintainer: Tanmay Panda <tanmay404103@outlook.com>
+
+pkgname=msi-center
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Lightweight native replacement for MSI Center, driven by msi-ec"
+arch=('x86_64')
+url="https://github.com/tanmaypanda-14/msi-center-rust"
+license=('MIT')
+depends=('fontconfig' 'freetype2')
+makedepends=('cargo' 'rust')
+optdepends=('msi-ec-dkms-git: kernel driver required for real hardware')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-rust-$pkgver"
+  export CARGO_HOME="$srcdir/cargo-home"
+  cargo build --release --locked
+}
+
+package() {
+  cd "$pkgname-rust-$pkgver"
+
+  install -Dm755 target/release/msi-center "$pkgdir/usr/bin/msi-center"
+  install -Dm644 packaging/msi-center.desktop "$pkgdir/usr/share/applications/msi-center.desktop"
+  install -Dm644 packaging/msi-center.svg \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/msi-center.svg"
+
+  # system integration: group, udev, read-only raw EC for the tachometer
+  install -Dm644 packaging/msi-ec-sysusers.conf "$pkgdir/usr/lib/sysusers.d/msi-ec.conf"
+  install -Dm644 packaging/msi-ec-tmpfiles.conf "$pkgdir/usr/lib/tmpfiles.d/msi-ec.conf"
+  install -Dm644 packaging/99-msi-ec-permissions.rules \
+    "$pkgdir/usr/lib/udev/rules.d/99-msi-ec-permissions.rules"
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
+
+post_install() {
+  command -v systemd-sysusers >/dev/null && systemd-sysusers /usr/lib/sysusers.d/msi-ec.conf || true
+  if command -v udevadm >/dev/null; then
+    udevadm control --reload || true
+    udevadm trigger --subsystem-match=platform --action=add || true
+    udevadm trigger --subsystem-match=power_supply --action=add || true
+    udevadm trigger --subsystem-match=leds --action=add || true
+  fi
+  cat <<'EON'
+
+msi-center needs the MSI EC kernel driver and group membership:
+
+  yay -S msi-ec-dkms-git        # or build it from github.com/BeardOverflow/msi-ec
+  sudo usermod -aG msi-ec $USER # then log out and back in
+  msi-center --snapshot         # expect "backend msi-ec"
+
+Fan RPM additionally reads the raw EC image; see INSTALL.md on GitHub.
+
+EON
+}
+
+post_upgrade() {
+  post_install
+}

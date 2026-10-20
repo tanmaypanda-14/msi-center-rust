@@ -137,9 +137,27 @@ purpose — that is all the RPM calculation needs).
 > `m /sys/class/power_supply/BAT1/charge_control_end_threshold 0664 root msi-ec -`
 > then `sudo systemd-tmpfiles --create /etc/tmpfiles.d/msi-ec.conf`.
 
-## 4. Install the binary
+## 4. Install the app
 
-### From a release tarball (recommended)
+### Arch package (recommended on Arch/Omarchy)
+
+`packaging/arch/PKGBUILD` builds everything into one package — binary, desktop
+entry, icon, `msi-ec` group, udev rules and tmpfiles — and reloads udev on
+install:
+
+```sh
+sudo pacman -U msi-center-0.2.0-1-x86_64.pkg.tar.zst
+sudo usermod -aG msi-ec "$USER"   # log out / back in
+```
+
+It prints the driver/group reminder afterwards. The driver stays a separate
+package (kernel modules cannot ship prebuilt in a portable package):
+
+```sh
+yay -S msi-ec-dkms-git
+```
+
+### From a release tarball
 
 ```sh
 tar xf msi-center-0.1.0-x86_64-linux.tar.gz

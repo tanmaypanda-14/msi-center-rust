@@ -11,15 +11,28 @@ through the in-tree `msi-ec` kernel driver plus battery/LED sysfs.
 
 ## Install
 
-v0.1.0 ships as a single binary: see [Releases](https://github.com/tanmaypanda-14/msi-center-rust/releases).
-
-**A fresh machine needs more than the binary**: the `msi-ec` kernel driver, the
-`ec_sys` module for fan RPM, and udev rules so your user can write to the EC.
-All of it is covered step by step in **[INSTALL.md](INSTALL.md)**.
+**Arch / Omarchy** — one package installs the binary, desktop entry, icon, the
+`msi-ec` group and the udev/tmpfiles rules in a single transaction:
 
 ```sh
-tar xf msi-center-0.1.0-x86_64-linux.tar.gz
-sudo install -Dm755 msi-center-0.1.0-x86_64-linux/msi-center /usr/local/bin/msi-center
+sudo pacman -U msi-center-0.2.0-1-x86_64.pkg.tar.zst
+yay -S msi-ec-dkms-git        # kernel driver, built against your kernel
+sudo usermod -aG msi-ec $USER # then log out and back in
+```
+
+**Any distro** — a single binary in a tarball (see
+[Releases](https://github.com/tanmaypanda-14/msi-center-rust/releases)):
+
+```sh
+tar xf msi-center-0.2.0-x86_64-linux.tar.gz
+sudo install -Dm755 msi-center-0.2.0-x86_64-linux/msi-center /usr/local/bin/msi-center
+```
+
+Either way, the machine also needs the **`msi-ec` kernel driver** (it cannot be
+bundled — kernel modules are built per kernel), and the permission setup from
+**[INSTALL.md](INSTALL.md)** if you install from the tarball.
+
+```sh
 msi-center --snapshot      # should print backend msi-ec, not mock
 ```
 

@@ -60,6 +60,24 @@ fn apply(ui: &AppWindow, s: &Snapshot) {
     ui.set_cooler_boost(s.cooler_boost);
     ui.set_webcam_blocked(s.webcam_blocked.unwrap_or(false));
 
+    match s.win_key_left {
+        Some(left) => {
+            ui.set_win_key_left(left);
+            ui.set_fn_win_label(
+                if left {
+                    "Swapped - Fn right, Win left"
+                } else {
+                    "Standard - Fn left, Win right"
+                }
+                .into(),
+            );
+        }
+        None => {
+            ui.set_win_key_left(false);
+            ui.set_fn_win_label("not exposed by this EC".into());
+        }
+    }
+
     if let Some(mode) = s.shift_mode {
         ui.set_shift_mode(mode.as_str().into());
     }
@@ -104,7 +122,10 @@ fn finish(ui: &AppWindow, backend: &dyn MsiControl, result: CoreResult<()>, ok: 
 }
 
 fn main() -> std::result::Result<(), slint::PlatformError> {
-    if std::env::args().skip(1).any(|a| a == "--version" || a == "-V") {
+    if std::env::args()
+        .skip(1)
+        .any(|a| a == "--version" || a == "-V")
+    {
         println!("msi-center {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
@@ -132,6 +153,14 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                     s.keyboard_brightness, s.keyboard_brightness_max
                 );
                 println!("webcam block {:?}", s.webcam_blocked);
+                println!(
+                    "fn/win swap  {}",
+                    match s.win_key_left {
+                        Some(true) => "swapped (Fn right, Win left)",
+                        Some(false) => "standard (Fn left, Win right)",
+                        None => "not exposed",
+                    }
+                );
             }
             Err(e) => {
                 eprintln!("error: {e}");
@@ -172,6 +201,11 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                 .parse::<u8>()
                 .map_err(|_| msi_core::Error::Backend(format!("bad level {value:?}")))
                 .and_then(|l| backend.set_keyboard_brightness(l)),
+            "fnswap" => match value {
+                "on" | "swapped" => backend.set_win_key_left(true),
+                "off" | "standard" => backend.set_win_key_left(false),
+                _ => Err(msi_core::Error::Backend(format!("bad bool {value:?}"))),
+            },
             "webcam" => match value {
                 "on" | "block" => backend.set_webcam_block(true),
                 "off" | "unblock" => backend.set_webcam_block(false),
@@ -302,6 +336,27 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                 result,
                 &format!("Keyboard backlight: {next} of {max}"),
             );
+        });
+    }
+
+    {
+        let backend = backend.clone();
+        let weak = ui.as_weak();
+        ui.on_toggle_fnswap(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let current = backend
+                .snapshot()
+                .ok()
+                .and_then(|s| s.win_key_left)
+                .unwrap_or(false);
+            let next = !current;
+            let result = backend.set_win_key_left(next);
+            let msg = if next {
+                "Fn/Win swapped"
+            } else {
+                "Fn/Win restored"
+            };
+            finish(&ui, &**backend, result, msg);
         });
     }
 

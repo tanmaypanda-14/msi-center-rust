@@ -41,4 +41,8 @@ pub trait MsiControl: Send + Sync {
     fn set_webcam_block(&self, _blocked: bool) -> Result<()> {
         Err(Error::Unsupported("webcam block"))
     }
+
+    fn set_win_key_left(&self, _left: bool) -> Result<()> {
+        Err(Error::Unsupported("Fn/Win swap"))
+    }
 }

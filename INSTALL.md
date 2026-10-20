@@ -61,6 +61,12 @@ advanced
 An empty or missing file means this EC firmware is newer than your driver
 version — update `msi-ec`.
 
+> **Firmware whitelist.** The driver matches the EC firmware string
+> (`/sys/devices/platform/msi-ec/fw_version`, e.g. `15HKEMS1.104`) against a
+> fixed list and refuses to load anything else — after a BIOS update you may
+> need a newer driver. This board is `CONF_G1_6` (fw `15HKEMS1.102/.104/.500/.501`);
+> see [`re/msi-ec-ms15hk.md`](re/msi-ec-ms15hk.md) for the register map.
+
 ## 2. `ec_sys` (for fan RPM)
 
 `msi-ec` exposes the EC's *thermal level*, not RPM. Real RPM is computed from
@@ -81,6 +87,11 @@ options ec_sys write_support=0
 `write_support=1` is only needed by tools that write fan curves straight to the
 EC. If you already use such a tool, keep whatever you have — the app only reads,
 and the permissions below still block group writes.
+
+> Newer `msi-ec` builds (HEAD, post-0.13) add
+> `/sys/devices/platform/msi-ec/debug/ec_dump`, which the app prefers over
+> `ec_sys`. With such a driver this whole step can be skipped: RPM works
+> without `ec_sys` at all.
 
 ## 3. Permissions: group + udev
 
@@ -222,6 +233,7 @@ X-GNOME-Autostart-enabled=true
 | Window never appears | X11 session (release is Wayland-only) | use a Wayland session, or rebuild with the X11 backend |
 | `error while loading shared libraries: libfontconfig.so.1` | runtime fonts missing | install `fontconfig` / `freetype2` |
 | Charge limit resets after reboot | firmware or BIOS setting | the EC may override it; check BIOS battery settings |
+| `modprobe: ERROR: could not insert 'msi_ec'` after a BIOS update | EC firmware not in the driver's whitelist | update `msi-ec`; check `fw_version` support in `re/msi-ec-ms15hk.md` |
 
 ## Other models
 

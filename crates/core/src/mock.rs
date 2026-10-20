@@ -11,6 +11,7 @@ pub struct MockBackend {
     cooler: Mutex<bool>,
     limit: Mutex<u8>,
     kbd: Mutex<u8>,
+    win_left: Mutex<bool>,
 }
 
 impl MockBackend {
@@ -21,6 +22,7 @@ impl MockBackend {
             cooler: Mutex::new(false),
             limit: Mutex::new(80),
             kbd: Mutex::new(1),
+            win_left: Mutex::new(false),
         }
     }
 }
@@ -52,6 +54,7 @@ impl MsiControl for MockBackend {
             keyboard_brightness: Some(*self.kbd.lock().unwrap()),
             keyboard_brightness_max: Some(3),
             webcam_blocked: Some(false),
+            win_key_left: Some(*self.win_left.lock().unwrap()),
         })
     }
 
@@ -81,6 +84,11 @@ impl MsiControl for MockBackend {
     }
 
     fn set_webcam_block(&self, _blocked: bool) -> Result<()> {
+        Ok(())
+    }
+
+    fn set_win_key_left(&self, left: bool) -> Result<()> {
+        *self.win_left.lock().unwrap() = left;
         Ok(())
     }
 }

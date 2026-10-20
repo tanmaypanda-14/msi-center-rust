@@ -75,12 +75,21 @@ runs.
 ```sh
 msi-center --snapshot            # print everything the UI shows
 msi-center --set fan=silent      # shift=eco|comfort|sport, fan=auto|silent|advanced
-msi-center --set cooler=on       # battery=60..100, kbd=N, webcam=on|off
+msi-center --set cooler=on       # battery=60..100, kbd=N
+msi-center --set fnswap=on       # swap Fn/Win (off = standard layout)
+msi-center --set webcam=on       # EC-level camera block
 msi-center --page 2              # open on a given page (0-3)
 ```
 
 ## Hardware notes
 
+* Fn/Win swap is one EC bit (`0xBF` bit 4, inverted on this board); "swapped"
+  means the Win key sits left of Fn. The driver exposes both `fn_key` and
+  `win_key`, so the app reads `win_key` and writes its opposite.
+* The driver only loads if the EC firmware string matches its whitelist
+  exactly. `15HKEMS1.104` is supported; a newer BIOS firmware may need a newer
+  driver. The full board analysis is in
+  [`re/msi-ec-ms15hk.md`](re/msi-ec-ms15hk.md).
 * Fan RPM is not `cpu/realtime_fan_speed` (that is the EC's thermal level at
   `0x71`). RPM comes from the tick counter at `0xCC/0xCD`, `480000 / ticks`,
   read from the debugfs EC image; without read access to it the RPM row shows

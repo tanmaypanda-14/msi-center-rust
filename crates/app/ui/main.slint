@@ -289,6 +289,8 @@ export component AppWindow inherits Window {
     in property <int> kbd-max: 3;
     in property <string> kbd-label: "";
     in property <bool> webcam-blocked: false;
+    in property <bool> win-key-left: false;
+    in property <string> fn-win-label: "";
     in property <string> status: "";
     in property <string> temp-plot: "";
 
@@ -300,8 +302,11 @@ export component AppWindow inherits Window {
     callback set-battery-limit(int);
     callback cycle-keyboard();
     callback toggle-webcam();
+    callback toggle-fnswap();
 
     Rectangle {
+        width: 100%;
+        height: 100%;
         background: Theme.bg;
 
     HorizontalLayout {
@@ -639,6 +644,13 @@ export component AppWindow inherits Window {
                     subtitle: kbd-label;
                     on: kbd-level > 0;
                     toggled => { root.cycle-keyboard(); }
+                }
+
+                ToggleRow {
+                    title: "Swap Fn / Win keys";
+                    subtitle: fn-win-label;
+                    on: win-key-left;
+                    toggled => { root.toggle-fnswap(); }
                 }
 
                 ToggleRow {

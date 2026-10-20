@@ -100,6 +100,8 @@ pub struct Snapshot {
     pub keyboard_brightness: Option<u8>,
     pub keyboard_brightness_max: Option<u8>,
     pub webcam_blocked: Option<bool>,
+    /// `true` when the Win key sits left of Fn, i.e. the two are swapped.
+    pub win_key_left: Option<bool>,
 }
 
 impl Snapshot {

@@ -36,7 +36,7 @@ post_install() {
 
 msi-center needs the MSI EC kernel driver and group membership:
 
-  yay -S msi-ec-dkms-git        # or install the msi-ec-dkms package
+  sudo pacman -U msi-ec-dkms-any.pkg.tar.zst   # from this package's release
   sudo usermod -aG msi-ec $target # then log out and back in
   msi-center --snapshot         # expect "backend msi-ec"
 

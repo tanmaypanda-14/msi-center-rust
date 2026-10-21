@@ -176,7 +176,7 @@ entry, icon, `msi-ec` group, udev rules, read-only `ec_sys` config, module
 loading and the boot-safe permission unit — and reloads udev on install:
 
 ```sh
-sudo pacman -U msi-center-0.2.3-2-x86_64.pkg.tar.zst
+sudo pacman -U msi-center-0.2.3-3-x86_64.pkg.tar.zst
 sudo usermod -aG msi-ec "$USER"   # log out / back in
 ```
 
@@ -184,12 +184,11 @@ It prints the driver/group reminder afterwards. The driver stays a separate
 package (kernel modules cannot ship prebuilt in a portable package):
 
 ```sh
-yay -S msi-ec-dkms-git
+sudo pacman -U msi-ec-dkms-0.13-1-any.pkg.tar.zst   # same release
 ```
 
 On the MS-15HK with the 7.2 kernel, use a driver that has the
-`acpi_battery_hook_register()` fix (or the locally built `msi-ec-dkms`
-package).
+`acpi_battery_hook_register()` fix (the release `msi-ec-dkms` package does).
 
 ### From a release tarball
 

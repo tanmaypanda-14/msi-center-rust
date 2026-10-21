@@ -43,7 +43,7 @@ If you prefer packages by hand, every release also carries the `.pkg.tar.zst`
 files:
 
 ```sh
-sudo pacman -U msi-center-0.2.3-2-x86_64.pkg.tar.zst msi-ec-dkms-0.13-1-any.pkg.tar.zst
+sudo pacman -U msi-center-0.2.3-3-x86_64.pkg.tar.zst msi-ec-dkms-0.13-1-any.pkg.tar.zst
 sudo usermod -aG msi-ec $USER # then log out and back in
 ```
 

@@ -1,8 +1,8 @@
 # Maintainer: Tanmay Panda <tanmay404103@outlook.com>
 
 pkgname=msi-center
-pkgver=0.2.3
-pkgrel=3
+pkgver=0.3.0
+pkgrel=1
 pkgdesc="Lightweight native replacement for MSI Center, driven by msi-ec"
 arch=('x86_64')
 url="https://github.com/tanmaypanda-14/msi-center-rust"
@@ -10,9 +10,8 @@ license=('MIT')
 depends=('fontconfig' 'freetype2')
 makedepends=('cargo' 'rust' 'git')
 optdepends=('msi-ec-dkms: kernel driver required for real hardware')
-# Pinned snapshot: 0.2.3 code plus the packaging-only permission fix
-# (boot-safe msi-ec-perms.service, ec_sys reload hook, 0710/0640 debugfs).
-_commit=9e0fdf5c17cb8b4589dc37e76b0dc5143d1017f6
+# Pinned source snapshot: 0.3.0 (themed UI, modular shell, self-update).
+_commit=6c793b461aac460e34d8966a761bca011ca34112
 source=("git+$url.git#commit=$_commit")
 sha256sums=('SKIP')
 install=msi-center.install

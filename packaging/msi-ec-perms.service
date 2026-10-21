@@ -1,0 +1,16 @@
+[Unit]
+Description=Read-only raw EC access for the msi-ec group
+Documentation=https://github.com/tanmaypanda-14/msi-center-rust
+# debugfs must be mounted, and ec_sys must have created ec0/io. At boot these
+# can happen in either order, so wait for both before applying the grant.
+After=sys-kernel-debug.mount systemd-modules-load.service
+ConditionPathExists=/sys/kernel/debug/ec/ec0/io
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/msi-ec.conf
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target

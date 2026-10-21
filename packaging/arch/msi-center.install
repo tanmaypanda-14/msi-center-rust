@@ -1,25 +1,48 @@
 post_install() {
-  # Scriptlets must never fail an install: udev may be absent in a chroot.
+  # Scriptlets must never fail an install: udev/systemd may be absent in a
+  # chroot or a container.
   systemd-sysusers /usr/lib/sysusers.d/msi-ec.conf 2>/dev/null || true
+
+  if [ -d /run/systemd/system ] && [ -x /usr/bin/systemctl ]; then
+    systemctl daemon-reload 2>/dev/null || true
+    systemctl enable msi-ec-perms.service 2>/dev/null || true
+  fi
+
+  # Load the driver and the raw EC interface now, so the session does not
+  # have to wait for a reboot. Both failures are harmless on other boards.
+  /usr/bin/modprobe msi_ec 2>/dev/null || true
+  /usr/bin/modprobe ec_sys 2>/dev/null || true
+
+  # ec_sys's hook normally applies this at load; run it explicitly as well so
+  # an already-loaded module (upgrade from an older package) converges.
+  /usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/msi-ec.conf 2>/dev/null || true
+
   if [ -x /usr/bin/udevadm ]; then
     udevadm control --reload 2>/dev/null || true
-    udevadm settle 2>/dev/null || true
-    # The rules match add|change, so this also covers the case where udev
-    # already saw the device before the package existed.
-    udevadm trigger --action=change --subsystem-match=platform 2>/dev/null || true
-    udevadm trigger --action=change --subsystem-match=power_supply 2>/dev/null || true
-    udevadm trigger --action=change --subsystem-match=leds 2>/dev/null || true
+    for p in /sys/devices/platform/msi-ec \
+             /sys/class/leds/msiacpi::kbd_backlight \
+             /sys/class/power_supply/BAT1; do
+      [ -e "$p" ] && udevadm trigger --action=change "$p" 2>/dev/null || true
+    done
     udevadm settle 2>/dev/null || true
   fi
-  cat <<'EON'
+
+  if [ -d /run/systemd/system ] && [ -x /usr/bin/systemctl ]; then
+    systemctl restart msi-ec-perms.service 2>/dev/null || true
+  fi
+
+  target="${SUDO_USER:-${USER:-your user}}"
+  cat <<EON
 
 msi-center needs the MSI EC kernel driver and group membership:
 
-  yay -S msi-ec-dkms-git        # or build it from github.com/BeardOverflow/msi-ec
-  sudo usermod -aG msi-ec $USER # then log out and back in
+  yay -S msi-ec-dkms-git        # or install the msi-ec-dkms package
+  sudo usermod -aG msi-ec $target # then log out and back in
   msi-center --snapshot         # expect "backend msi-ec"
 
-Fan RPM additionally reads the raw EC image; see INSTALL.md on GitHub.
+The raw EC image is group-readable only (fan RPM); ec_sys always loads with
+write_support=0, and msi-ec-perms.service plus the ec_sys modprobe hook
+re-apply that grant after every boot and module reload.
 
 EON
   return 0

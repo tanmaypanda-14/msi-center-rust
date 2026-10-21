@@ -2,7 +2,7 @@
 
 pkgname=msi-center
 pkgver=0.2.3
-pkgrel=1
+pkgrel=2
 pkgdesc="Lightweight native replacement for MSI Center, driven by msi-ec"
 arch=('x86_64')
 url="https://github.com/tanmaypanda-14/msi-center-rust"
@@ -28,11 +28,17 @@ package() {
   install -Dm644 packaging/msi-center.svg \
     "$pkgdir/usr/share/icons/hicolor/scalable/apps/msi-center.svg"
 
-  # system integration: group, udev, read-only raw EC for the tachometer
+  # system integration: group, udev, read-only raw EC for the tachometer,
+  # module loading and the boot-safe debugfs permission unit
   install -Dm644 packaging/msi-ec-sysusers.conf "$pkgdir/usr/lib/sysusers.d/msi-ec.conf"
   install -Dm644 packaging/msi-ec-tmpfiles.conf "$pkgdir/usr/lib/tmpfiles.d/msi-ec.conf"
   install -Dm644 packaging/99-msi-ec-permissions.rules \
     "$pkgdir/usr/lib/udev/rules.d/99-msi-ec-permissions.rules"
+  install -Dm644 packaging/msi-ec-modprobe.conf "$pkgdir/usr/lib/modprobe.d/msi-ec.conf"
+  install -Dm644 packaging/msi-ec-modules-load.conf \
+    "$pkgdir/usr/lib/modules-load.d/msi-ec.conf"
+  install -Dm644 packaging/msi-ec-perms.service \
+    "$pkgdir/usr/lib/systemd/system/msi-ec-perms.service"
 
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

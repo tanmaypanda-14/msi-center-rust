@@ -12,10 +12,11 @@ through the in-tree `msi-ec` kernel driver plus battery/LED sysfs.
 ## Install
 
 **Arch / Omarchy** — one package installs the binary, desktop entry, icon, the
-`msi-ec` group and the udev/tmpfiles rules in a single transaction:
+`msi-ec` group, the udev rules and the boot-safe raw-EC permission unit in a
+single transaction:
 
 ```sh
-sudo pacman -U msi-center-0.2.3-1-x86_64.pkg.tar.zst
+sudo pacman -U msi-center-0.2.3-2-x86_64.pkg.tar.zst
 yay -S msi-ec-dkms-git        # kernel driver, built against your kernel
 sudo usermod -aG msi-ec $USER # then log out and back in
 ```

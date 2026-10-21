@@ -77,11 +77,17 @@ sudo modprobe ec_sys write_support=0
 dd if=/sys/kernel/debug/ec/ec0/io bs=1 skip=204 count=2 2>/dev/null | od -An -tu1
 ```
 
-Make it persistent and **read-only** (this app never writes raw EC memory):
+Make it persistent and **read-only** (this app never writes raw EC memory). The
+Arch package already ships this as `/usr/lib/modprobe.d/msi-ec.conf`; when
+building from source, install
+[`packaging/msi-ec-modprobe.conf`](packaging/msi-ec-modprobe.conf) there (or as
+`/etc/modprobe.d/msi-ec.conf`). It contains:
 
-```sh
-# /etc/modprobe.d/msi-ec-ec_sys.conf
+```ini
 options ec_sys write_support=0
+# debugfs recreates ec0/io 0400 root:root on every load, so re-apply the
+# read-only group grant after each load as well.
+install ec_sys /usr/bin/modprobe --ignore-install ec_sys $CMDLINE_OPTS && { /usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/msi-ec.conf || true; }
 ```
 
 `write_support=1` is only needed by tools that write fan curves straight to the
@@ -104,20 +110,34 @@ sudo usermod -aG msi-ec "$USER"      # log out / back in afterwards
 id -nG | grep msi-ec
 ```
 
-Install the two files from [`packaging/`](packaging/):
+The Arch package installs all of this integration already (as `/usr/lib`
+files, plus `msi-ec-perms.service`), so package users only need the group
+step. When building from source, install these files and enable the unit:
 
 ```sh
-sudo install -Dm644 packaging/99-msi-ec-permissions.rules /etc/udev/rules.d/99-msi-ec-permissions.rules
-sudo install -Dm644 packaging/msi-ec-tmpfiles.conf       /etc/tmpfiles.d/msi-ec.conf
+sudo install -Dm644 packaging/99-msi-ec-permissions.rules /usr/lib/udev/rules.d/99-msi-ec-permissions.rules
+sudo install -Dm644 packaging/msi-ec-tmpfiles.conf       /usr/lib/tmpfiles.d/msi-ec.conf
+sudo install -Dm644 packaging/msi-ec-modprobe.conf       /usr/lib/modprobe.d/msi-ec.conf
+sudo install -Dm644 packaging/msi-ec-modules-load.conf   /usr/lib/modules-load.d/msi-ec.conf
+sudo install -Dm644 packaging/msi-ec-perms.service       /usr/lib/systemd/system/msi-ec-perms.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now msi-ec-perms.service
 sudo udevadm control --reload-rules
-sudo udevadm trigger --subsystem-match=platform     --action=add
-sudo udevadm trigger --subsystem-match=power_supply --action=add
-sudo udevadm trigger --subsystem-match=leds         --action=add
+sudo udevadm trigger --subsystem-match=platform     --action=change
+sudo udevadm trigger --subsystem-match=power_supply --action=change
+sudo udevadm trigger --subsystem-match=leds         --action=change
 ```
+
+`msi-ec-perms.service` waits for both `sys-kernel-debug.mount` and
+`systemd-modules-load.service`, so the debugfs grant no longer depends on which
+one wins at boot. The `ec_sys` install hook re-applies it after a manual
+module reload.
 
 The rule grants group write on exactly those attributes and nothing else:
 every other file in the `msi-ec` tree (`fw_version`, `modalias`,
 `driver_override`, `uevent`, the sensors) stays root-owned and read-only.
+Directories and the raw EC image are `0710`/`0640` root:msi-ec — traverse and
+read, never list or write.
 
 Check the result:
 
@@ -136,21 +156,20 @@ All four must be group `msi-ec` and group-writable (the last one is read-only on
 purpose — that is all the RPM calculation needs).
 
 > **Battery threshold still `root:root`?** On some boots the charge attributes
-> appear after the udev event. Re-run the `udevadm trigger` lines above, or add
-> to `/etc/tmpfiles.d/msi-ec.conf`:
-> `m /sys/class/power_supply/BAT1/charge_control_end_threshold 0664 root msi-ec -`
-> then `sudo systemd-tmpfiles --create /etc/tmpfiles.d/msi-ec.conf`.
+> appear after the udev event. Re-run the `udevadm trigger` line above; the
+> dedicated `BAT1` rule matches `add|change` and will converge on the next
+> event.
 
 ## 4. Install the app
 
 ### Arch package (recommended on Arch/Omarchy)
 
 `packaging/arch/PKGBUILD` builds everything into one package — binary, desktop
-entry, icon, `msi-ec` group, udev rules and tmpfiles — and reloads udev on
-install:
+entry, icon, `msi-ec` group, udev rules, read-only `ec_sys` config, module
+loading and the boot-safe permission unit — and reloads udev on install:
 
 ```sh
-sudo pacman -U msi-center-0.2.3-1-x86_64.pkg.tar.zst
+sudo pacman -U msi-center-0.2.3-2-x86_64.pkg.tar.zst
 sudo usermod -aG msi-ec "$USER"   # log out / back in
 ```
 
@@ -160,6 +179,10 @@ package (kernel modules cannot ship prebuilt in a portable package):
 ```sh
 yay -S msi-ec-dkms-git
 ```
+
+On the MS-15HK with the 7.2 kernel, use a driver that has the
+`acpi_battery_hook_register()` fix (or the locally built `msi-ec-dkms`
+package).
 
 ### From a release tarball
 
@@ -270,12 +293,19 @@ open an issue with your model and `msi-ec` registers.
 ## Uninstall
 
 ```sh
+# pacman install:
+sudo pacman -R msi-center
+# source install:
 sudo rm /usr/local/bin/msi-center \
         /usr/share/applications/msi-center.desktop \
-        /usr/share/icons/hicolor/scalable/apps/msi-center.svg
-sudo rm /etc/udev/rules.d/99-msi-ec-permissions.rules /etc/tmpfiles.d/msi-ec.conf
-# optional, if nothing else uses them:
-sudo rm /etc/modules-load.d/msi-ec.conf /etc/modprobe.d/msi-ec-ec_sys.conf
+        /usr/share/icons/hicolor/scalable/apps/msi-center.svg \
+        /usr/lib/udev/rules.d/99-msi-ec-permissions.rules \
+        /usr/lib/tmpfiles.d/msi-ec.conf \
+        /usr/lib/modprobe.d/msi-ec.conf \
+        /usr/lib/modules-load.d/msi-ec.conf \
+        /usr/lib/systemd/system/msi-ec-perms.service
+sudo systemctl disable --now msi-ec-perms.service
+sudo udevadm control --reload-rules
 sudo dkms remove msi_ec/0.13 --all
 sudo groupdel msi-ec
 ```

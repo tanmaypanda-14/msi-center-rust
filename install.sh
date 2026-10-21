@@ -61,6 +61,10 @@ log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mwarning:\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 
+# pacman -Qq resolves "provides", so `pacman -Qq msi-ec-dkms-git` succeeds when
+# msi-ec-dkms (which provides it) is installed. Match real package names only.
+pkg_installed() { pacman -Qq 2>/dev/null | awk -v p="$1" '$0 == p { found = 1 } END { exit !found }'; }
+
 if [ "$dry_run" -eq 0 ] && [ "$(id -u)" -ne 0 ]; then
   die "run as root: curl -fsSL <install.sh URL> | sudo bash"
 fi
@@ -100,14 +104,14 @@ fi
 
 driver_other=0
 for p in msi-ec-dkms-git msi-ec-git; do
-  if pacman -Qq "$p" >/dev/null 2>&1; then driver_other=1; fi
+  if pkg_installed "$p"; then driver_other=1; fi
 done
 
 driver_skip=0
 if [ "$driver_other" -eq 1 ]; then
   warn "another msi-ec driver package is installed; leaving it alone"
   driver_skip=1
-elif pacman -Qq msi-ec-dkms >/dev/null 2>&1; then
+elif pkg_installed msi-ec-dkms; then
   inst=$(pacman -Q msi-ec-dkms | awk '{print $2}')
   if [ -n "$drv_ver" ] && command -v vercmp >/dev/null 2>&1 \
        && [ "$(vercmp "$inst" "$drv_ver")" -gt 0 ]; then
@@ -166,7 +170,7 @@ fi
 log "installing dependencies"
 pacman -S --needed --noconfirm fontconfig freetype2 >/dev/null \
   || die "could not install the app dependencies"
-if ! pacman -Qq dkms >/dev/null 2>&1; then
+if ! pkg_installed dkms; then
   pacman -S --needed --noconfirm dkms >/dev/null || die "could not install dkms"
 fi
 
@@ -293,7 +297,7 @@ if [ "$app_skip" -eq 1 ] && [ -n "$app_installed" ]; then
 fi
 summary_driver=${drv_ver:-unknown}
 for p in msi-ec-dkms msi-ec-dkms-git msi-ec-git; do
-  if pacman -Qq "$p" >/dev/null 2>&1; then
+  if pkg_installed "$p"; then
     summary_driver=$(pacman -Q "$p" | awk '{print $2}')
     break
   fi

@@ -1,0 +1,24 @@
+// Line icons, drawn as paths so they inherit the theme and need no assets.
+// Coordinates live in a 20x20 viewbox.
+
+import { Theme } from "theme.slint";
+
+export global Icons {
+    out property <string> dashboard: "M2.5 2.5 h6 v6 h-6 z M11.5 2.5 h6 v6 h-6 z M2.5 11.5 h6 v6 h-6 z M11.5 11.5 h6 v6 h-6 z";
+    out property <string> cooling: "M10 1.5 v17 M1.5 10 h17 M3.8 3.8 l12.4 12.4 M16.2 3.8 l-12.4 12.4";
+    out property <string> battery: "M2 6 h13 v8 h-13 z M17 8.5 v3";
+    out property <string> sliders: "M2.5 5.5 h15 M2.5 10 h15 M2.5 14.5 h15 M6.5 3 v5 M13 7.5 v5 M8.5 12 v5";
+}
+
+export component Icon inherits Path {
+    in property <color> tone: Theme.muted;
+    in property <length> size: 18px;
+
+    width: root.size;
+    height: root.size;
+    viewbox-width: 20;
+    viewbox-height: 20;
+    fill: transparent;
+    stroke: root.tone;
+    stroke-width: 1.5px;
+}

@@ -1,0 +1,163 @@
+// Interactive controls.
+
+import { Theme } from "../theme.slint";
+
+export component SectionLabel inherits Text {
+    color: Theme.faint;
+    font-size: Theme.fs-caption;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+
+export component StatusPill inherits Rectangle {
+    in property <string> label;
+    in property <color> tint: Theme.ok;
+
+    width: 132px;
+    height: 30px;
+    border-radius: 15px;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 14px;
+        spacing: 7px;
+        alignment: center;
+        cross-axis-alignment: center;
+
+        Rectangle {
+            width: 7px;
+            height: 7px;
+            border-radius: 4px;
+            background: root.tint;
+        }
+        Text {
+            text: root.label;
+            color: Theme.text;
+            font-size: Theme.fs-caption;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component ModeTile inherits Rectangle {
+    in property <string> title;
+    in property <string> detail;
+    in property <bool> selected: false;
+    callback clicked();
+
+    horizontal-stretch: 1;
+    height: 68px;
+    border-radius: Theme.radius-control;
+    background: selected ? Theme.accent-soft : (touch.has-hover ? Theme.surface-alt : Theme.surface);
+    border-width: 1px;
+    border-color: selected ? Theme.accent : Theme.border;
+    animate background { duration: 120ms; }
+
+    VerticalLayout {
+        padding: 13px;
+        spacing: 2px;
+
+        Text {
+            text: root.title;
+            color: selected ? Theme.text-bright : Theme.text;
+            font-size: Theme.fs-body;
+            font-weight: 600;
+        }
+        Text {
+            text: root.detail;
+            color: selected ? Theme.accent : Theme.muted;
+            font-size: Theme.fs-caption;
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+        mouse-cursor: pointer;
+    }
+}
+
+export component SwitchRow inherits Rectangle {
+    in property <string> title;
+    in property <string> detail;
+    in property <bool> on: false;
+    callback toggled();
+
+    horizontal-stretch: 1;
+    height: 58px;
+    border-radius: Theme.radius-control;
+    background: touch.has-hover ? Theme.surface-alt : Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 14px;
+        spacing: 12px;
+        cross-axis-alignment: center;
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.fs-body;
+                font-weight: 600;
+            }
+            Text {
+                text: root.detail;
+                color: Theme.muted;
+                font-size: Theme.fs-caption;
+            }
+        }
+
+        Rectangle { horizontal-stretch: 1; background: transparent; }
+
+        Rectangle {
+            width: 42px;
+            height: 24px;
+            border-radius: 12px;
+            background: root.on ? Theme.accent : Theme.surface-alt;
+            border-width: 1px;
+            border-color: root.on ? Theme.accent : Theme.border-strong;
+            animate background { duration: 140ms; }
+
+            Rectangle {
+                width: 18px;
+                height: 18px;
+                border-radius: 9px;
+                y: 3px;
+                x: root.on ? 21px : 3px;
+                background: root.on ? Theme.on-accent : Theme.muted;
+                animate x { duration: 140ms; }
+            }
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.toggled(); }
+        mouse-cursor: pointer;
+    }
+}
+
+export component LevelBar inherits Rectangle {
+    in property <int> value: 0;
+    in property <int> maximum: 100;
+    in property <color> tint: Theme.accent;
+
+    height: 8px;
+    border-radius: 4px;
+    background: Theme.surface-alt;
+
+    Rectangle {
+        height: 8px;
+        border-radius: 4px;
+        width: root.maximum > 0 ? parent.width * root.value / root.maximum : 0px;
+        background: root.tint;
+        animate width { duration: 300ms; }
+    }
+}

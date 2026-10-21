@@ -1,0 +1,108 @@
+import { Theme } from "../theme.slint";
+import { AppState } from "../state.slint";
+import { SectionLabel, ModeTile, LevelBar } from "../components/controls.slint";
+
+export component BatteryPage inherits VerticalLayout {
+    spacing: 15px;
+
+    // See StatCard: bottom-aligned small text needs a baseline nudge.
+    private property <length> small-offset: (Theme.fs-display - Theme.fs-small) * 0.22;
+
+    Rectangle {
+        horizontal-stretch: 1;
+        height: 152px;
+        border-radius: Theme.radius-card;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border;
+
+        VerticalLayout {
+            padding: 18px;
+            spacing: 12px;
+
+            SectionLabel { text: "CHARGE LEVEL"; }
+
+            HorizontalLayout {
+                vertical-stretch: 0;
+                spacing: 6px;
+
+                Text {
+                    text: AppState.battery;
+                    color: Theme.text;
+                    font-size: Theme.fs-display;
+                    font-weight: 600;
+                }
+                VerticalLayout {
+                    vertical-stretch: 1;
+                    alignment: end;
+                    padding-bottom: root.small-offset;
+
+                    Text {
+                        text: "%";
+                        color: Theme.ok;
+                        font-size: Theme.fs-small;
+                        font-weight: 600;
+                    }
+                }
+
+                Rectangle { horizontal-stretch: 1; background: transparent; }
+
+                VerticalLayout {
+                    vertical-stretch: 1;
+                    alignment: end;
+                    padding-bottom: root.small-offset;
+
+                    Text {
+                        text: AppState.ac-online ? "charging / on AC" : "on battery";
+                        color: Theme.muted;
+                        font-size: Theme.fs-small;
+                    }
+                }
+            }
+
+            // Keep the level bar on the card's bottom edge and let the slack
+            // sit here, instead of stretching the value row.
+            Rectangle { vertical-stretch: 1; background: transparent; }
+
+            LevelBar {
+                value: AppState.battery-percent;
+                tint: AppState.battery-percent <= 20 ? Theme.danger : Theme.ok;
+            }
+        }
+    }
+
+    SectionLabel { text: "CHARGE LIMIT"; }
+
+    Text {
+        text: "Capping the charge level extends battery life when the laptop stays plugged in.";
+        color: Theme.muted;
+        font-size: Theme.fs-small;
+        wrap: word-wrap;
+    }
+
+    HorizontalLayout {
+        spacing: 12px;
+        height: 68px;
+
+        ModeTile {
+            title: "60%";
+            detail: "best longevity";
+            selected: AppState.battery-limit == "60";
+            clicked => { AppState.set-battery-limit(60); }
+        }
+        ModeTile {
+            title: "80%";
+            detail: "balanced";
+            selected: AppState.battery-limit == "80";
+            clicked => { AppState.set-battery-limit(80); }
+        }
+        ModeTile {
+            title: "100%";
+            detail: "full capacity";
+            selected: AppState.battery-limit == "100";
+            clicked => { AppState.set-battery-limit(100); }
+        }
+    }
+
+    Rectangle { vertical-stretch: 1; background: transparent; }
+}

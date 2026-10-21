@@ -1,0 +1,43 @@
+// The view state and the commands the window exposes.
+//
+// Pages are pure views over this global, which keeps them independent of the
+// window's nesting and gives Rust a single seam to bind to.
+
+export global AppState {
+    in-out property <int> page: 0;
+
+    in-out property <string> model-name: "MSI Modern 15 B7M";
+    in-out property <string> subtitle: "";
+    in-out property <string> theme-name: "";
+    in-out property <string> backend-label: "";
+    in-out property <string> status: "";
+
+    in-out property <string> cpu-temp: "--";
+    in-out property <string> fan-rpm: "--";
+    in-out property <string> fan-level: "--";
+    in-out property <string> temp-plot: "";
+
+    in-out property <string> battery: "--";
+    in-out property <int> battery-percent: 0;
+    in-out property <string> battery-limit: "--";
+    in-out property <bool> ac-online: false;
+
+    in-out property <bool> cooler-boost: false;
+    in-out property <string> shift-mode: "comfort";
+    in-out property <string> fan-mode: "auto";
+
+    in-out property <int> kbd-level: 0;
+    in-out property <int> kbd-max: 0;
+    in-out property <string> kbd-label: "";
+    in-out property <bool> webcam-blocked: false;
+    in-out property <bool> win-key-left: false;
+    in-out property <string> fn-win-label: "";
+
+    callback set-shift(string);
+    callback set-fan(string);
+    callback toggle-cooler();
+    callback set-battery-limit(int);
+    callback cycle-keyboard();
+    callback toggle-webcam();
+    callback toggle-fnswap();
+}

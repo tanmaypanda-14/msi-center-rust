@@ -1,0 +1,177 @@
+// Read-only cards. They take pre-formatted strings: the Rust side owns all
+// number formatting, so the UI never does locale-sensitive work.
+
+import { Theme } from "../theme.slint";
+
+export component StatCard inherits Rectangle {
+    in property <string> title;
+    in property <string> value;
+    in property <string> unit;
+    in property <string> note;
+    in property <color> tint: Theme.accent;
+
+    // Bottom-aligned text inside a layout shares the row's bottom edge, so a
+    // smaller unit would sit below the value's baseline. Nudge it back up by
+    // roughly the difference in descender space between the two font sizes.
+    private property <length> unit-offset: (Theme.fs-value - Theme.fs-small) * 0.22;
+
+    horizontal-stretch: 1;
+    min-height: 116px;
+    border-radius: Theme.radius-card;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 6px;
+
+        Text {
+            text: root.title;
+            color: Theme.faint;
+            font-size: Theme.fs-caption;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        HorizontalLayout {
+            spacing: 5px;
+            alignment: start;
+
+            Text {
+                text: root.value;
+                color: Theme.text;
+                font-size: Theme.fs-value;
+                font-weight: 600;
+            }
+            VerticalLayout {
+                vertical-stretch: 1;
+                alignment: end;
+                padding-bottom: root.unit-offset;
+
+                Text {
+                    text: root.unit;
+                    color: root.tint;
+                    font-size: Theme.fs-small;
+                    font-weight: 600;
+                }
+            }
+        }
+
+        Text {
+            text: root.note;
+            color: Theme.muted;
+            font-size: Theme.fs-caption;
+            wrap: word-wrap;
+        }
+    }
+}
+
+// A labelled value, used for things that do not need a big number.
+export component InfoTile inherits Rectangle {
+    in property <string> title;
+    in property <string> value;
+    in property <string> note;
+    in property <color> tint: Theme.accent;
+
+    horizontal-stretch: 1;
+    min-height: 96px;
+    border-radius: Theme.radius-card;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 4px;
+
+        Text {
+            text: root.title;
+            color: Theme.faint;
+            font-size: Theme.fs-caption;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        Text {
+            text: root.value;
+            color: root.tint;
+            font-size: Theme.fs-body;
+            font-weight: 600;
+            wrap: word-wrap;
+        }
+        Text {
+            text: root.note;
+            color: Theme.muted;
+            font-size: Theme.fs-caption;
+            wrap: word-wrap;
+        }
+    }
+}
+
+export component TrendCard inherits Rectangle {
+    in property <string> title;
+    in property <string> value;
+    in property <string> plot;
+    in property <color> tint: Theme.accent;
+
+    horizontal-stretch: 1;
+    min-height: 160px;
+    border-radius: Theme.radius-card;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 10px;
+
+        HorizontalLayout {
+            Text {
+                text: root.title;
+                color: Theme.faint;
+                font-size: Theme.fs-caption;
+                font-weight: 600;
+                letter-spacing: 1px;
+                vertical-alignment: center;
+            }
+            Rectangle { horizontal-stretch: 1; background: transparent; }
+            Text {
+                text: root.value;
+                color: root.tint;
+                font-size: Theme.fs-small;
+                font-weight: 700;
+            }
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+            min-height: 96px;
+            background: transparent;
+
+            // Scale labels in a small left gutter.
+            Text { text: "100°"; x: 0; y: 0; color: Theme.faint; font-size: Theme.fs-caption; }
+            Text { text: "65°"; x: 0; y: parent.height * 50% - 7px; color: Theme.faint; font-size: Theme.fs-caption; }
+            Text { text: "30°"; x: 0; y: parent.height - 14px; color: Theme.faint; font-size: Theme.fs-caption; }
+
+            // Hairline grid, drawn under the curve.
+            Rectangle { x: 38px; y: 0; width: parent.width - 38px; height: 1px; background: Theme.border; }
+            Rectangle { x: 38px; y: parent.height * 50%; width: parent.width - 38px; height: 1px; background: Theme.border; }
+            Rectangle { x: 38px; y: parent.height - 1px; width: parent.width - 38px; height: 1px; background: Theme.border; }
+
+            Path {
+                x: 38px;
+                width: parent.width - 38px;
+                height: 100%;
+                viewbox-width: 1000;
+                viewbox-height: 100;
+                // Stretch the viewbox to the element; the default `contain`
+                // letterboxes a 10:1 viewbox into a tall card.
+                fit: ImageFit.fill;
+                commands: root.plot;
+                fill: transparent;
+                stroke: root.tint;
+                stroke-width: 2px;
+            }
+        }
+    }
+}

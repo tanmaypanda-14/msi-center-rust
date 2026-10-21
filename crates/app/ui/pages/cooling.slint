@@ -1,0 +1,67 @@
+import { Theme } from "../theme.slint";
+import { AppState } from "../state.slint";
+import { StatCard, TrendCard } from "../components/cards.slint";
+import { SectionLabel, ModeTile, SwitchRow } from "../components/controls.slint";
+
+export component CoolingPage inherits VerticalLayout {
+    spacing: 15px;
+
+    SectionLabel { text: "FAN MODE"; }
+
+    HorizontalLayout {
+        spacing: 12px;
+        height: 68px;
+
+        ModeTile {
+            title: "Auto";
+            detail: "the EC decides";
+            selected: AppState.fan-mode == "auto";
+            clicked => { AppState.set-fan("auto"); }
+        }
+        ModeTile {
+            title: "Silent";
+            detail: "lowest noise";
+            selected: AppState.fan-mode == "silent";
+            clicked => { AppState.set-fan("silent"); }
+        }
+        ModeTile {
+            title: "Advanced";
+            detail: "custom curve";
+            selected: AppState.fan-mode == "advanced";
+            clicked => { AppState.set-fan("advanced"); }
+        }
+    }
+
+    SwitchRow {
+        title: "Cooler Boost";
+        detail: "Maximum fan speed, ignores the curve";
+        on: AppState.cooler-boost;
+        toggled => { AppState.toggle-cooler(); }
+    }
+
+    HorizontalLayout {
+        spacing: 14px;
+
+        StatCard {
+            title: "FAN SPEED";
+            value: AppState.fan-rpm;
+            unit: "RPM";
+            note: "measured over the last second";
+            tint: Theme.accent;
+        }
+        StatCard {
+            title: "CPU TEMPERATURE";
+            value: AppState.cpu-temp;
+            unit: "";
+            note: "package temperature";
+            tint: Theme.warn;
+        }
+    }
+
+    TrendCard {
+        title: "THERMAL HISTORY  ·  LAST 2 MINUTES";
+        value: AppState.cpu-temp;
+        plot: AppState.temp-plot;
+        tint: Theme.accent;
+    }
+}

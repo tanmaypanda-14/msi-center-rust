@@ -328,6 +328,10 @@ Verify:
   msi-center --snapshot
   stat -c '%a %U:%G' /sys/kernel/debug/ec/ec0/io
 
+Update later:
+  msi-center --update        # the app only
+  re-run this installer      # app, driver, permissions, widget
+
 No maintenance is needed after a reboot or a module reload: the
 msi-ec-perms.service unit and the ec_sys modprobe hook re-apply the grant.
 EOF

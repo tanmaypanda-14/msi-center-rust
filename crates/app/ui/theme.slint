@@ -1,0 +1,44 @@
+// Design tokens for the window.
+//
+// Every colour, font size and radius lives here. Rust fills these in from the
+// active Omarchy theme (see crates/app/src/theme.rs); the defaults below only
+// exist so the Slint preview and the tests render something sensible.
+
+export global Theme {
+    in-out property <color> bg: #101418;
+    in-out property <color> rail: #0c1015;
+    in-out property <color> surface: #171d24;
+    in-out property <color> surface-alt: #1e2630;
+    in-out property <color> border: #29323d;
+    in-out property <color> border-strong: #3a4552;
+
+    in-out property <color> text: #e6eaf0;
+    in-out property <color> text-bright: #ffffff;
+    in-out property <color> muted: #98a3b3;
+    in-out property <color> faint: #6b7686;
+
+    in-out property <color> accent: #62a08a;
+    in-out property <color> accent-hover: #7ab39c;
+    in-out property <color> accent-soft: #22322b;
+    in-out property <color> on-accent: #0c1015;
+
+    in-out property <color> ok: #7bbf8a;
+    in-out property <color> warn: #e0c060;
+    in-out property <color> danger: #e06a6a;
+    in-out property <color> info: #6aa6d8;
+
+    in-out property <string> font-family: "Adwaita Sans";
+    in-out property <length> fs-caption: 11px;
+    in-out property <length> fs-small: 12px;
+    in-out property <length> fs-body: 13px;
+    in-out property <length> fs-title: 21px;
+    in-out property <length> fs-value: 32px;
+    in-out property <length> fs-display: 40px;
+
+    in-out property <length> radius-card: 14px;
+    in-out property <length> radius-control: 10px;
+
+    // Shared rhythm, so pages do not invent their own values.
+    out property <length> gap: 16px;
+    out property <length> page-padding: 26px;
+}

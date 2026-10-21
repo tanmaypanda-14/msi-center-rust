@@ -1,0 +1,56 @@
+import { Theme } from "../theme.slint";
+import { AppState } from "../state.slint";
+import { InfoTile } from "../components/cards.slint";
+import { SectionLabel, SwitchRow } from "../components/controls.slint";
+
+export component SystemPage inherits VerticalLayout {
+    spacing: 15px;
+
+    HorizontalLayout {
+        spacing: 14px;
+
+        InfoTile {
+            title: "MODEL";
+            value: AppState.model-name;
+            note: AppState.subtitle;
+            tint: Theme.text;
+        }
+        InfoTile {
+            title: "DRIVER";
+            value: AppState.backend-label;
+            note: "msi-ec platform driver";
+            tint: Theme.info;
+        }
+        InfoTile {
+            title: "THEME";
+            value: AppState.theme-name;
+            note: "read from the Omarchy state directory";
+            tint: Theme.accent;
+        }
+    }
+
+    SectionLabel { text: "HARDWARE SWITCHES"; }
+
+    SwitchRow {
+        title: "Keyboard backlight";
+        detail: AppState.kbd-label;
+        on: AppState.kbd-level > 0;
+        toggled => { AppState.cycle-keyboard(); }
+    }
+
+    SwitchRow {
+        title: "Swap Fn / Win keys";
+        detail: AppState.fn-win-label;
+        on: AppState.win-key-left;
+        toggled => { AppState.toggle-fnswap(); }
+    }
+
+    SwitchRow {
+        title: "Block webcam";
+        detail: "EC-level kill switch";
+        on: AppState.webcam-blocked;
+        toggled => { AppState.toggle-webcam(); }
+    }
+
+    Rectangle { vertical-stretch: 1; background: transparent; }
+}

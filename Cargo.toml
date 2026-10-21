@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["crates/core", "crates/app"]
+members = ["crates/core", "crates/theme", "crates/app"]
 
 [workspace.package]
-version = "0.2.3"
+version = "0.3.0"
 edition = "2021"
 license = "MIT"
-repository = "https://example.invalid/msi-center-rust"
+repository = "https://github.com/tanmaypanda-14/msi-center-rust"
 
 # Small, fast single binary: no debug info, whole-program LTO, abort on panic.
 [profile.release]
@@ -17,7 +17,4 @@ panic = "abort"
 strip = "symbols"
 
 [workspace.dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 thiserror = "2"
-clap = { version = "4", features = ["derive"] }

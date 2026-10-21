@@ -1,0 +1,42 @@
+// Sidebar navigation entry.
+
+import { Theme } from "../theme.slint";
+import { Icon } from "../icons.slint";
+
+export component NavItem inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> active: false;
+    callback clicked();
+
+    height: 58px;
+    border-radius: Theme.radius-control;
+    background: active ? Theme.accent-soft : (touch.has-hover ? Theme.surface : transparent);
+    border-width: 1px;
+    border-color: active ? Theme.border-strong : transparent;
+
+    VerticalLayout {
+        spacing: 3px;
+        alignment: center;
+        cross-axis-alignment: center;
+
+        Icon {
+            commands: root.icon;
+            tone: active ? Theme.accent : Theme.muted;
+            size: 18px;
+        }
+
+        Text {
+            text: root.label;
+            color: active ? Theme.accent : Theme.muted;
+            font-size: Theme.fs-caption;
+            font-weight: active ? 600 : 400;
+            horizontal-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+        mouse-cursor: pointer;
+    }
+}

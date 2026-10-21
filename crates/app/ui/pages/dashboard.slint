@@ -1,0 +1,81 @@
+import { Theme } from "../theme.slint";
+import { AppState } from "../state.slint";
+import { StatCard, TrendCard } from "../components/cards.slint";
+import { SectionLabel, ModeTile, SwitchRow } from "../components/controls.slint";
+
+export component DashboardPage inherits VerticalLayout {
+    spacing: 15px;
+
+    HorizontalLayout {
+        spacing: 14px;
+
+        StatCard {
+            title: "CPU TEMPERATURE";
+            value: AppState.cpu-temp;
+            unit: "";
+            note: "EC sensor 0x71";
+            tint: AppState.cpu-temp == "--" ? Theme.muted : Theme.warn;
+        }
+        StatCard {
+            title: "FAN SPEED";
+            value: AppState.fan-rpm;
+            unit: "RPM";
+            note: "tachometer 0xCC/0xCD";
+            tint: Theme.accent;
+        }
+        StatCard {
+            title: "FAN LEVEL";
+            value: AppState.fan-level;
+            unit: "/100";
+            note: "EC thermal level";
+            tint: Theme.info;
+        }
+        StatCard {
+            title: "BATTERY";
+            value: AppState.battery;
+            unit: "%";
+            note: AppState.battery-limit == "--" ? "no charge limit" : "charge limit " + AppState.battery-limit + "%";
+            tint: Theme.ok;
+        }
+    }
+
+    SectionLabel { text: "POWER MODE"; }
+
+    HorizontalLayout {
+        spacing: 12px;
+        height: 68px;
+
+        ModeTile {
+            title: "Super Battery";
+            detail: "eco";
+            selected: AppState.shift-mode == "eco";
+            clicked => { AppState.set-shift("eco"); }
+        }
+        ModeTile {
+            title: "Balanced";
+            detail: "comfort";
+            selected: AppState.shift-mode == "comfort";
+            clicked => { AppState.set-shift("comfort"); }
+        }
+        ModeTile {
+            title: "High Performance";
+            detail: "sport";
+            selected: AppState.shift-mode == "sport";
+            clicked => { AppState.set-shift("sport"); }
+        }
+    }
+
+    SwitchRow {
+        title: "Cooler Boost";
+        detail: "Runs both fans at maximum";
+        on: AppState.cooler-boost;
+        toggled => { AppState.toggle-cooler(); }
+    }
+
+    TrendCard {
+        title: "CPU TEMPERATURE  ·  LAST 2 MINUTES";
+        value: AppState.cpu-temp;
+        plot: AppState.temp-plot;
+        tint: Theme.accent;
+    }
+}

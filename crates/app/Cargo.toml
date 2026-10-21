@@ -10,6 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 msi-core = { path = "../core" }
+msi-theme = { path = "../theme" }
 # Software renderer only: no OpenGL/femtovg, no accessibility bridge, smaller
 # and lighter for a static dashboard UI.
 slint = { version = "1", default-features = false, features = [
@@ -18,6 +19,7 @@ slint = { version = "1", default-features = false, features = [
     "renderer-software",
     "compat-1-2",
 ] }
+thiserror.workspace = true
 
 [build-dependencies]
 slint-build = "1"

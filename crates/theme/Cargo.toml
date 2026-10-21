@@ -1,0 +1,9 @@
+[package]
+name = "msi-theme"
+description = "Resolve the active Omarchy theme into semantic UI design tokens"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true

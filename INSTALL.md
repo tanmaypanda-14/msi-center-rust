@@ -176,7 +176,7 @@ entry, icon, `msi-ec` group, udev rules, read-only `ec_sys` config, module
 loading and the boot-safe permission unit — and reloads udev on install:
 
 ```sh
-sudo pacman -U msi-center-0.2.3-3-x86_64.pkg.tar.zst
+sudo pacman -U msi-center-0.3.0-1-x86_64.pkg.tar.zst
 sudo usermod -aG msi-ec "$USER"   # log out / back in
 ```
 
@@ -193,8 +193,8 @@ On the MS-15HK with the 7.2 kernel, use a driver that has the
 ### From a release tarball
 
 ```sh
-tar xf msi-center-0.1.0-x86_64-linux.tar.gz
-cd msi-center-0.1.0-x86_64-linux
+tar xf msi-center-0.3.0-x86_64-linux.tar.gz
+cd msi-center-0.3.0-x86_64-linux
 sudo install -Dm755 msi-center /usr/local/bin/msi-center
 sudo install -Dm644 msi-center.desktop /usr/share/applications/msi-center.desktop
 sudo install -Dm644 msi-center.svg /usr/share/icons/hicolor/scalable/apps/msi-center.svg
@@ -255,7 +255,28 @@ webcam block Some(false)
 Then start the GUI with `msi-center` (or from the launcher). The window opens on
 the Dashboard and refreshes once a second.
 
-## 6. Autostart (optional)
+## 6. Update
+
+Package and tarball installs update the app in place:
+
+```sh
+msi-center --update            # check, ask, install
+msi-center --update --dry-run  # print the plan only
+msi-center --update --yes      # no prompt
+```
+
+The updater verifies the release artifact against `SHA256SUMS`, then uses
+`pacman -U` for package-owned installs (keeping the package database correct)
+or atomically replaces a standalone binary. It never runs a downloaded script.
+
+The `msi-ec` driver, permission files, and the Omarchy widget are not part of
+the app package. Update those by re-running the installer:
+
+```sh
+curl -fsSL https://github.com/tanmaypanda-14/msi-center-rust/releases/latest/download/install.sh | sudo bash
+```
+
+## 7. Autostart (optional)
 
 Hyprland (`~/.config/hypr/autostart.conf` or wherever your config runs exec-once):
 

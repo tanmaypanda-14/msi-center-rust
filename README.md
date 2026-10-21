@@ -33,8 +33,9 @@ Use `--no-widget` to skip the widget, or `--dry-run` to download and verify
 without changing anything:
 
 ```sh
-curl -fsSL .../install.sh | sudo bash -s -- --no-widget
-curl -fsSL .../install.sh | bash -s -- --dry-run
+url=https://github.com/tanmaypanda-14/msi-center-rust/releases/latest/download/install.sh
+curl -fsSL "$url" | sudo bash -s -- --no-widget
+curl -fsSL "$url" | bash -s -- --dry-run
 ```
 
 If you prefer packages by hand, every release also carries the `.pkg.tar.zst`

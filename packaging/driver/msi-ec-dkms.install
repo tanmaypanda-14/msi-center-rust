@@ -1,0 +1,14 @@
+post_install() {
+  dkms add -m msi_ec -v 0.13 2>/dev/null || true
+  dkms build -m msi_ec -v 0.13 --force 2>/dev/null || true
+  dkms install -m msi_ec -v 0.13 --force 2>/dev/null || true
+  depmod -a 2>/dev/null || true
+}
+
+post_upgrade() {
+  post_install
+}
+
+pre_remove() {
+  dkms remove -m msi_ec -v 0.13 --all 2>/dev/null || true
+}

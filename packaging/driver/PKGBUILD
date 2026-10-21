@@ -1,0 +1,22 @@
+# Locally built from the patched source that is installed in
+# /usr/src/msi_ec-0.13. The patch adds the acpi_battery_hook_register() API
+# used by Linux 7.2.
+pkgname=msi-ec-dkms
+pkgver=0.13
+pkgrel=1
+pkgdesc="MSI EC kernel driver (DKMS, MS-15HK / Linux 7.2 battery-hook patch)"
+arch=('any')
+url="https://github.com/BeardOverflow/msi-ec"
+license=('GPL')
+depends=('dkms')
+provides=('msi-ec-dkms-git')
+conflicts=('msi-ec-dkms-git')
+options=(!strip !debug)
+source=('msi_ec-0.13.tar.gz')
+sha256sums=('91d1bc427026b5e40e351771f9e985444be5f8331ea77f6b0b1413cd01c42343')
+install="$pkgname.install"
+
+package() {
+  install -d "$pkgdir/usr/src/msi_ec-$pkgver"
+  cp -a "$srcdir/msi_ec-$pkgver/." "$pkgdir/usr/src/msi_ec-$pkgver/"
+}

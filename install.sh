@@ -73,7 +73,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 log "downloading the latest release"
 for f in "$APP_ASSET" "$DRIVER_ASSET" SHA256SUMS; do
-  curl -fL --proto '=https' --tlsv1.2 --retry 3 --connect-timeout 15 \
+  curl -fsSL --proto '=https' --tlsv1.2 --retry 3 --connect-timeout 15 \
     -o "$tmp/$f" "$BASE/$f" || die "could not download $BASE/$f"
 done
 
@@ -123,7 +123,10 @@ if [ -n "$target" ] && ! id "$target" >/dev/null 2>&1; then
 fi
 
 if [ "$with_widget" = auto ]; then
-  if [ -n "$target" ] && command -v omarchy >/dev/null 2>&1; then
+  # sudo often resets PATH, so do not rely on `command -v omarchy` alone.
+  if [ -n "$target" ] && { command -v omarchy >/dev/null 2>&1 \
+       || [ -x /usr/share/omarchy/bin/omarchy ] \
+       || [ -d "$(getent passwd "$target" | cut -d: -f6)/.config/omarchy" ]; }; then
     with_widget=1
   else
     with_widget=0

@@ -1,15 +1,22 @@
-# Give the `msi-ec` group write access to the attributes this app uses.
+# Give the `msi-ec` group write access to exactly the attributes this app uses.
 #
 # Install as /etc/udev/rules.d/99-msi-ec-permissions.rules and then:
 #   sudo udevadm control --reload-rules
 #   sudo udevadm trigger --subsystem-match=platform     --action=add
 #   sudo udevadm trigger --subsystem-match=power_supply --action=add
 #   sudo udevadm trigger --subsystem-match=leds         --action=add
+#
+# Each rule removes group-write from the whole tree first, then grants it on an
+# explicit list. sysfs modes reset on every boot anyway, but this also makes an
+# upgrade from an older, broader rule converge without a reboot.
 
-# Fan mode, shift mode, cooler boost, webcam block, sensors.
+# Shift mode, fan mode, cooler boost, webcam block, Fn/Win swap.
+# Everything else stays root-only: fw_version, modalias, driver_override and
+# uevent are not writable by the group, and sensors remain read-only.
 ACTION=="add", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
   RUN+="/bin/chgrp -R msi-ec /sys/devices/platform/msi-ec", \
-  RUN+="/bin/chmod -R g+w /sys/devices/platform/msi-ec"
+  RUN+="/bin/chmod -R g-w /sys/devices/platform/msi-ec", \
+  RUN+="/bin/chmod g+w /sys/devices/platform/msi-ec/shift_mode /sys/devices/platform/msi-ec/fan_mode /sys/devices/platform/msi-ec/cooler_boost /sys/devices/platform/msi-ec/webcam_block /sys/devices/platform/msi-ec/win_key"
 
 # The raw EC (fan tachometer) lives in debugfs, which udev cannot see, so
 # apply the read-only group permissions from tmpfiles the moment the platform
@@ -17,12 +24,13 @@ ACTION=="add", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
 ACTION=="add", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
   RUN+="/usr/bin/systemd-tmpfiles --create"
 
-# Battery charge thresholds. %S%p is the real sysfs directory: BAT1 in
+# Battery charge threshold. %S%p is the real sysfs directory: BAT1 in
 # /sys/class is a symlink, and chgrp -R does not dereference a command-line
 # symlink, so the symlinked path silently changes nothing.
 ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="BAT1", \
   RUN+="/bin/chgrp -R msi-ec /sys%p", \
-  RUN+="/bin/chmod -R g+w /sys%p"
+  RUN+="/bin/chmod -R g-w /sys%p", \
+  RUN+="/bin/chmod g+w /sys%p/charge_control_end_threshold"
 
 # Keyboard backlight.
 ACTION=="add", SUBSYSTEM=="leds", KERNEL=="msiacpi::kbd_backlight", \

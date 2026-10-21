@@ -115,6 +115,10 @@ sudo udevadm trigger --subsystem-match=power_supply --action=add
 sudo udevadm trigger --subsystem-match=leds         --action=add
 ```
 
+The rule grants group write on exactly those attributes and nothing else:
+every other file in the `msi-ec` tree (`fw_version`, `modalias`,
+`driver_override`, `uevent`, the sensors) stays root-owned and read-only.
+
 Check the result:
 
 ```sh
@@ -146,7 +150,7 @@ entry, icon, `msi-ec` group, udev rules and tmpfiles — and reloads udev on
 install:
 
 ```sh
-sudo pacman -U msi-center-0.2.1-1-x86_64.pkg.tar.zst
+sudo pacman -U msi-center-0.2.2-1-x86_64.pkg.tar.zst
 sudo usermod -aG msi-ec "$USER"   # log out / back in
 ```
 

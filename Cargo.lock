@@ -2352,7 +2352,7 @@ dependencies = [
 
 [[package]]
 name = "msi-center"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "msi-core",
  "slint",
@@ -2361,7 +2361,7 @@ dependencies = [
 
 [[package]]
 name = "msi-core"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "thiserror 2.0.21",
 ]

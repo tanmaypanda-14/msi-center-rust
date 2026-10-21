@@ -1,7 +1,7 @@
 # Maintainer: Tanmay Panda <tanmay404103@outlook.com>
 
 pkgname=msi-center
-pkgver=0.2.1
+pkgver=0.2.2
 pkgrel=1
 pkgdesc="Lightweight native replacement for MSI Center, driven by msi-ec"
 arch=('x86_64')
@@ -37,12 +37,13 @@ package() {
 }
 
 post_install() {
-  command -v systemd-sysusers >/dev/null && systemd-sysusers /usr/lib/sysusers.d/msi-ec.conf || true
-  if command -v udevadm >/dev/null; then
-    udevadm control --reload || true
-    udevadm trigger --subsystem-match=platform --action=add || true
-    udevadm trigger --subsystem-match=power_supply --action=add || true
-    udevadm trigger --subsystem-match=leds --action=add || true
+  # Scriptlets must never fail an install: udev may be absent in a chroot.
+  systemd-sysusers /usr/lib/sysusers.d/msi-ec.conf 2>/dev/null || true
+  if [ -x /usr/bin/udevadm ]; then
+    udevadm control --reload 2>/dev/null || true
+    udevadm trigger --subsystem-match=platform --action=add 2>/dev/null || true
+    udevadm trigger --subsystem-match=power_supply --action=add 2>/dev/null || true
+    udevadm trigger --subsystem-match=leds --action=add 2>/dev/null || true
   fi
   cat <<'EON'
 
@@ -55,6 +56,7 @@ msi-center needs the MSI EC kernel driver and group membership:
 Fan RPM additionally reads the raw EC image; see INSTALL.md on GitHub.
 
 EON
+  return 0
 }
 
 post_upgrade() {

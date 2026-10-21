@@ -12,7 +12,7 @@ makedepends=('cargo' 'rust' 'git')
 optdepends=('msi-ec-dkms-git: kernel driver required for real hardware')
 # Pinned snapshot: 0.2.3 code plus the packaging-only permission fix
 # (boot-safe msi-ec-perms.service, ec_sys reload hook, 0710/0640 debugfs).
-_commit=b1249bdfa4e6f38d20ebc6282b1ce66c624c6422
+_commit=9e0fdf5c17cb8b4589dc37e76b0dc5143d1017f6
 source=("git+$url.git#commit=$_commit")
 sha256sums=('SKIP')
 install=msi-center.install

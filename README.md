@@ -11,13 +11,37 @@ through the in-tree `msi-ec` kernel driver plus battery/LED sysfs.
 
 ## Install
 
-**Arch / Omarchy** — one package installs the binary, desktop entry, icon, the
-`msi-ec` group, the udev rules and the boot-safe raw-EC permission unit in a
-single transaction:
+**Arch / Omarchy** — one command installs the app package, the matching
+`msi-ec` DKMS source, the permissions, and (when Omarchy is detected) the bar
+widget:
 
 ```sh
-sudo pacman -U msi-center-0.2.3-2-x86_64.pkg.tar.zst
-yay -S msi-ec-dkms-git        # kernel driver, built against your kernel
+curl -fsSL https://github.com/tanmaypanda-14/msi-center-rust/releases/latest/download/install.sh | sudo bash
+```
+
+What it does:
+
+- downloads the latest release packages and verifies `SHA256SUMS`
+- installs `msi-center` and `msi-ec-dkms` (the DKMS source is owned by a
+  package, so pacman can cleanly upgrade or remove it)
+- adds the invoking user to `msi-ec`
+- removes older `/etc` copies of the permission files, enables
+  `msi-ec-perms.service`, and applies the grant immediately
+- updates `~/.config/omarchy/plugins/tanmay.msi-power` when Omarchy is present
+
+Use `--no-widget` to skip the widget, or `--dry-run` to download and verify
+without changing anything:
+
+```sh
+curl -fsSL .../install.sh | sudo bash -s -- --no-widget
+curl -fsSL .../install.sh | bash -s -- --dry-run
+```
+
+If you prefer packages by hand, every release also carries the `.pkg.tar.zst`
+files:
+
+```sh
+sudo pacman -U msi-center-0.2.3-2-x86_64.pkg.tar.zst msi-ec-dkms-0.13-1-any.pkg.tar.zst
 sudo usermod -aG msi-ec $USER # then log out and back in
 ```
 

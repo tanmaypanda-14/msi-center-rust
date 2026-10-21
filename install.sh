@@ -197,7 +197,9 @@ else
 fi
 
 log "removing older per-plugin copies of the permission files"
-# Widget standalone unit first, so it is not left enabled.
+# Drop enablement first so removing an old /etc unit cannot leave a dangling
+# symlink behind; it is enabled again below from the package unit.
+systemctl disable msi-ec-perms.service 2>/dev/null || true
 systemctl disable --now msi-power-perms.service 2>/dev/null || true
 rm -f \
   /etc/udev/rules.d/90-msi-ec.rules \

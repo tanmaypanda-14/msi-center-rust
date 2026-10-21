@@ -1,7 +1,7 @@
 # Maintainer: Tanmay Panda <tanmay404103@outlook.com>
 
 pkgname=msi-center
-pkgver=0.2.2
+pkgver=0.2.3
 pkgrel=1
 pkgdesc="Lightweight native replacement for MSI Center, driven by msi-ec"
 arch=('x86_64')
@@ -12,6 +12,7 @@ makedepends=('cargo' 'rust')
 optdepends=('msi-ec-dkms-git: kernel driver required for real hardware')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('SKIP')
+install=msi-center.install
 
 build() {
   cd "$pkgname-rust-$pkgver"
@@ -34,31 +35,4 @@ package() {
     "$pkgdir/usr/lib/udev/rules.d/99-msi-ec-permissions.rules"
 
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-}
-
-post_install() {
-  # Scriptlets must never fail an install: udev may be absent in a chroot.
-  systemd-sysusers /usr/lib/sysusers.d/msi-ec.conf 2>/dev/null || true
-  if [ -x /usr/bin/udevadm ]; then
-    udevadm control --reload 2>/dev/null || true
-    udevadm trigger --subsystem-match=platform --action=add 2>/dev/null || true
-    udevadm trigger --subsystem-match=power_supply --action=add 2>/dev/null || true
-    udevadm trigger --subsystem-match=leds --action=add 2>/dev/null || true
-  fi
-  cat <<'EON'
-
-msi-center needs the MSI EC kernel driver and group membership:
-
-  yay -S msi-ec-dkms-git        # or build it from github.com/BeardOverflow/msi-ec
-  sudo usermod -aG msi-ec $USER # then log out and back in
-  msi-center --snapshot         # expect "backend msi-ec"
-
-Fan RPM additionally reads the raw EC image; see INSTALL.md on GitHub.
-
-EON
-  return 0
-}
-
-post_upgrade() {
-  post_install
 }

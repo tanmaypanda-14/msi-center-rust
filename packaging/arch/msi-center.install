@@ -1,0 +1,30 @@
+post_install() {
+  # Scriptlets must never fail an install: udev may be absent in a chroot.
+  systemd-sysusers /usr/lib/sysusers.d/msi-ec.conf 2>/dev/null || true
+  if [ -x /usr/bin/udevadm ]; then
+    udevadm control --reload 2>/dev/null || true
+    udevadm settle 2>/dev/null || true
+    # The rules match add|change, so this also covers the case where udev
+    # already saw the device before the package existed.
+    udevadm trigger --action=change --subsystem-match=platform 2>/dev/null || true
+    udevadm trigger --action=change --subsystem-match=power_supply 2>/dev/null || true
+    udevadm trigger --action=change --subsystem-match=leds 2>/dev/null || true
+    udevadm settle 2>/dev/null || true
+  fi
+  cat <<'EON'
+
+msi-center needs the MSI EC kernel driver and group membership:
+
+  yay -S msi-ec-dkms-git        # or build it from github.com/BeardOverflow/msi-ec
+  sudo usermod -aG msi-ec $USER # then log out and back in
+  msi-center --snapshot         # expect "backend msi-ec"
+
+Fan RPM additionally reads the raw EC image; see INSTALL.md on GitHub.
+
+EON
+  return 0
+}
+
+post_upgrade() {
+  post_install
+}

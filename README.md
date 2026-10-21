@@ -15,7 +15,7 @@ through the in-tree `msi-ec` kernel driver plus battery/LED sysfs.
 `msi-ec` group and the udev/tmpfiles rules in a single transaction:
 
 ```sh
-sudo pacman -U msi-center-0.2.2-1-x86_64.pkg.tar.zst
+sudo pacman -U msi-center-0.2.3-1-x86_64.pkg.tar.zst
 yay -S msi-ec-dkms-git        # kernel driver, built against your kernel
 sudo usermod -aG msi-ec $USER # then log out and back in
 ```
@@ -24,8 +24,8 @@ sudo usermod -aG msi-ec $USER # then log out and back in
 [Releases](https://github.com/tanmaypanda-14/msi-center-rust/releases)):
 
 ```sh
-tar xf msi-center-0.2.2-x86_64-linux.tar.gz
-sudo install -Dm755 msi-center-0.2.2-x86_64-linux/msi-center /usr/local/bin/msi-center
+tar xf msi-center-0.2.3-x86_64-linux.tar.gz
+sudo install -Dm755 msi-center-0.2.3-x86_64-linux/msi-center /usr/local/bin/msi-center
 ```
 
 Either way, the machine also needs the **`msi-ec` kernel driver** (it cannot be

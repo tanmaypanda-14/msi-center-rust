@@ -4,6 +4,13 @@ Tested on an **MSI Modern 15 B7M (MS-15HK)**, Omarchy/Arch, kernel
 `7.2.8-9-omarchy`, `msi-ec` DKMS 0.13. Other boards supported by `msi-ec`
 should work, with one caveat about fan RPM (see [Other models](#other-models)).
 
+## Fast path
+
+The [one-command installer](README.md#install) handles the app package, the
+matching DKMS source, the permissions, and the Omarchy widget. The manual
+steps below are for source/tarball installs or when you want to inspect each
+step.
+
 ## At a glance
 
 | Requirement | Why | Needed |

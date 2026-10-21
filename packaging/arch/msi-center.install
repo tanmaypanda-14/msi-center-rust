@@ -51,3 +51,10 @@ EON
 post_upgrade() {
   post_install
 }
+
+pre_remove() {
+  if [ -d /run/systemd/system ] && [ -x /usr/bin/systemctl ]; then
+    systemctl disable --now msi-ec-perms.service 2>/dev/null || true
+    systemctl daemon-reload 2>/dev/null || true
+  fi
+}

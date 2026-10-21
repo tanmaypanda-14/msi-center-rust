@@ -2,16 +2,16 @@
 # uses. Everything else stays root-only. The raw EC image is handled by
 # msi-ec-tmpfiles.conf (read-only), not by udev: debugfs produces no uevents.
 #
-# Each rule strips group-write from the whole tree first (so an upgrade from
-# an older, broader rule converges without a reboot), then grants it on an
-# explicit list. Ownership is only changed on the granted files, keeping the
-# rest of the tree at its normal root:root ownership.
+# Each rule resets ownership to root and strips group-write from the whole
+# tree first, then grants both on an explicit list. That makes an upgrade
+# from an older, broader rule converge without a reboot.
 
 # Shift mode, fan mode, cooler boost, webcam block, Fn/Win swap.
 # The keyboard LED lives under the msi-ec platform device; it is re-granted
 # here after the -R strip so a platform event arriving after the LED event
 # cannot leave the backlight read-only.
 ACTION=="add|change", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
+  RUN+="/bin/chgrp -R root /sys/devices/platform/msi-ec", \
   RUN+="/bin/chmod -R g-w /sys/devices/platform/msi-ec", \
   RUN+="/bin/chgrp msi-ec /sys/devices/platform/msi-ec/shift_mode /sys/devices/platform/msi-ec/fan_mode /sys/devices/platform/msi-ec/cooler_boost /sys/devices/platform/msi-ec/webcam_block /sys/devices/platform/msi-ec/win_key", \
   RUN+="/bin/chmod g+w /sys/devices/platform/msi-ec/shift_mode /sys/devices/platform/msi-ec/fan_mode /sys/devices/platform/msi-ec/cooler_boost /sys/devices/platform/msi-ec/webcam_block /sys/devices/platform/msi-ec/win_key", \
@@ -22,6 +22,7 @@ ACTION=="add|change", SUBSYSTEM=="platform", KERNEL=="msi-ec", \
 # /sys/class is a symlink, and chgrp -R does not dereference a command-line
 # symlink, so the symlinked path silently changes nothing.
 ACTION=="add|change", SUBSYSTEM=="power_supply", KERNEL=="BAT1", \
+  RUN+="/bin/chgrp -R root /sys%p", \
   RUN+="/bin/chmod -R g-w /sys%p", \
   RUN+="/bin/chgrp msi-ec /sys%p/charge_control_end_threshold", \
   RUN+="/bin/chmod g+w /sys%p/charge_control_end_threshold"

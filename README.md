@@ -29,8 +29,9 @@ What it does:
   `msi-ec-perms.service`, and applies the grant immediately
 - updates `~/.config/omarchy/plugins/tanmay.msi-power` when Omarchy is present
 
-Use `--no-widget` to skip the widget, or `--dry-run` to download and verify
-without changing anything:
+Use `--no-widget` to skip the widget, `--no-driver` when you install
+`msi-ec-dkms` yourself, or `--dry-run` to download and verify without
+changing anything:
 
 ```sh
 url=https://github.com/tanmaypanda-14/msi-center-rust/releases/latest/download/install.sh

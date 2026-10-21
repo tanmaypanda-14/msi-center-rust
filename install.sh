@@ -21,15 +21,17 @@ WIDGET_REPO="https://github.com/tanmaypanda-14/omarchy-msi-power.git"
 WIDGET_DIR_NAME="tanmay.msi-power"
 
 with_widget="auto"
+no_driver=0
 dry_run=0
 
 usage() {
   cat <<'EOF'
-Usage: install.sh [--with-widget | --no-widget] [--dry-run]
+Usage: install.sh [--with-widget | --no-widget] [--no-driver] [--dry-run]
 
   --with-widget   install/update the Omarchy bar widget
                   (default: yes when Omarchy is detected)
   --no-widget     do not touch the Omarchy widget
+  --no-driver     do not install/upgrade msi-ec-dkms (you manage it yourself)
   --dry-run       download and verify the packages, print the actions,
                   change nothing (can run as a normal user)
   -h, --help      show this help
@@ -48,6 +50,7 @@ for arg in "$@"; do
   case "$arg" in
     --with-widget) with_widget=1 ;;
     --no-widget)   with_widget=0 ;;
+    --no-driver)   no_driver=1 ;;
     --dry-run)     dry_run=1 ;;
     -h|--help)     usage; exit 0 ;;
     *) echo "install.sh: unknown option: $arg" >&2; usage >&2; exit 2 ;;
@@ -111,6 +114,10 @@ elif pacman -Qq msi-ec-dkms >/dev/null 2>&1; then
     warn "msi-ec-dkms $inst is newer than the release; leaving it alone"
     driver_skip=1
   fi
+fi
+
+if [ "$no_driver" -eq 1 ]; then
+  driver_skip=1
 fi
 
 # The user who invoked sudo, not root.
@@ -280,11 +287,23 @@ else
   group_note="Your session already has the msi-ec group."
 fi
 
+summary_app=${app_ver:-unknown}
+if [ "$app_skip" -eq 1 ] && [ -n "$app_installed" ]; then
+  summary_app=$app_installed
+fi
+summary_driver=${drv_ver:-unknown}
+for p in msi-ec-dkms msi-ec-dkms-git msi-ec-git; do
+  if pacman -Qq "$p" >/dev/null 2>&1; then
+    summary_driver=$(pacman -Q "$p" | awk '{print $2}')
+    break
+  fi
+done
+
 printf '\n\033[1;32mDone.\033[0m\n\n'
 cat <<EOF
 Installed:
-  msi-center ${app_ver:-unknown}
-  msi-ec-dkms ${drv_ver:-unknown} (DKMS source; the module is built per kernel)
+  msi-center ${summary_app}
+  msi-ec driver ${summary_driver} (DKMS source; the module is built per kernel)
   permissions: 0710 debugfs directories, 0640 raw EC image,
                write access to exactly the seven attributes the app uses
 

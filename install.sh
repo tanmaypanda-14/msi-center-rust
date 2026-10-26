@@ -243,6 +243,11 @@ systemctl restart msi-ec-perms.service 2>/dev/null || true
 modprobe msi_ec 2>/dev/null || true
 if [ -d /sys/devices/platform/msi-ec ]; then
   log "msi-ec is bound"
+  # debug/ec_set exists only with msi_ec debug=1; msi-fan-helper needs it.
+  if [ ! -e /sys/devices/platform/msi-ec/debug/ec_set ]; then
+    modprobe -r msi_ec 2>/dev/null && modprobe msi_ec 2>/dev/null \
+      || warn "reload msi_ec for manual fan control: sudo modprobe -r msi_ec && sudo modprobe msi_ec"
+  fi
 else
   warn "msi-ec did not bind; check dmesg (BIOS/EC firmware support)"
 fi

@@ -1,7 +1,7 @@
 import { Theme } from "../theme.slint";
 import { AppState } from "../state.slint";
 import { StatCard, TrendCard } from "../components/cards.slint";
-import { SectionLabel, ModeTile, SwitchRow } from "../components/controls.slint";
+import { SectionLabel, ModeTile, SwitchRow, FanSlider, TextButton } from "../components/controls.slint";
 
 export component CoolingPage inherits VerticalLayout {
     spacing: 15px;
@@ -55,6 +55,73 @@ export component CoolingPage inherits VerticalLayout {
             unit: "";
             note: "package temperature";
             tint: Theme.warn;
+        }
+    }
+
+    // Manual override: a flat fan curve written to the EC by the setuid
+    // helper. The slider only commits on release, so dragging is one write.
+    Rectangle {
+        horizontal-stretch: 1;
+        height: 120px;
+        border-radius: Theme.radius-card;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: AppState.manual-fan-active ? Theme.accent : Theme.border;
+
+        VerticalLayout {
+            padding: 14px;
+            spacing: 6px;
+
+            HorizontalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: "MANUAL FAN SPEED";
+                    color: Theme.faint;
+                    font-size: Theme.fs-caption;
+                    font-weight: 600;
+                    letter-spacing: 1px;
+                    vertical-alignment: center;
+                }
+
+                Rectangle { horizontal-stretch: 1; background: transparent; }
+
+                Text {
+                    text: AppState.manual-fan-active ? AppState.manual-fan + "% fixed" : "EC curve active";
+                    color: AppState.manual-fan-active ? Theme.accent : Theme.muted;
+                    font-size: Theme.fs-caption;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+            }
+
+            FanSlider {
+                value: AppState.manual-fan;
+                minimum: 20;
+                maximum: 100;
+                interactive: AppState.manual-fan-available;
+                released(percent) => { AppState.set-manual-fan(percent); }
+            }
+
+            HorizontalLayout {
+                spacing: 10px;
+
+                Text {
+                    horizontal-stretch: 1;
+                    text: AppState.manual-fan-available
+                        ? "Overrides the EC curve with one fixed speed."
+                        : "Needs msi-ec loaded with debug=1 plus the fan helper.";
+                    color: Theme.muted;
+                    font-size: Theme.fs-caption;
+                    vertical-alignment: center;
+                }
+
+                TextButton {
+                    label: "Restore EC curve";
+                    enabled: AppState.manual-fan-available && AppState.manual-fan-active;
+                    clicked => { AppState.restore-fan-curve(); }
+                }
+            }
         }
     }
 

@@ -2,13 +2,14 @@
 //! e.g. inside the build container).
 
 use crate::backend::{MsiControl, Result};
-use crate::model::{FanMode, ShiftMode, Snapshot};
+use crate::model::{FanCurve, FanMode, ShiftMode, Snapshot};
 use std::sync::Mutex;
 
 pub struct MockBackend {
     shift: Mutex<ShiftMode>,
     fan: Mutex<FanMode>,
     cooler: Mutex<bool>,
+    manual: Mutex<Option<u8>>,
     limit: Mutex<u8>,
     kbd: Mutex<u8>,
     win_left: Mutex<bool>,
@@ -20,6 +21,7 @@ impl MockBackend {
             shift: Mutex::new(ShiftMode::Comfort),
             fan: Mutex::new(FanMode::Advanced),
             cooler: Mutex::new(false),
+            manual: Mutex::new(None),
             limit: Mutex::new(80),
             kbd: Mutex::new(1),
             win_left: Mutex::new(false),
@@ -39,6 +41,7 @@ impl MsiControl for MockBackend {
     }
 
     fn snapshot(&self) -> Result<Snapshot> {
+        let manual = *self.manual.lock().unwrap();
         Ok(Snapshot {
             model: "MSI Modern 15 B7M (mock)".into(),
             ec_firmware: "15HKEMS1.104".into(),
@@ -47,7 +50,15 @@ impl MsiControl for MockBackend {
             cooler_boost: *self.cooler.lock().unwrap(),
             cpu_temp_c: Some(56.0),
             fan1_rpm: Some(2875),
-            fan1_percent: Some(55),
+            fan1_percent: Some(manual.unwrap_or(55)),
+            fan_curve: Some(match manual {
+                Some(percent) => FanCurve {
+                    speeds: [percent; 7],
+                    ..FanCurve::FACTORY
+                },
+                None => FanCurve::FACTORY,
+            }),
+            manual_fan_available: true,
             battery_percent: Some(87),
             battery_limit: Some(*self.limit.lock().unwrap()),
             ac_online: true,
@@ -70,6 +81,17 @@ impl MsiControl for MockBackend {
 
     fn set_cooler_boost(&self, on: bool) -> Result<()> {
         *self.cooler.lock().unwrap() = on;
+        Ok(())
+    }
+
+    fn set_manual_fan(&self, percent: u8) -> Result<()> {
+        *self.manual.lock().unwrap() = Some(percent);
+        *self.fan.lock().unwrap() = FanMode::Advanced;
+        Ok(())
+    }
+
+    fn restore_fan_curve(&self) -> Result<()> {
+        *self.manual.lock().unwrap() = None;
         Ok(())
     }
 

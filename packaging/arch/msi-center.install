@@ -13,6 +13,13 @@ post_install() {
   /usr/bin/modprobe msi_ec 2>/dev/null || true
   /usr/bin/modprobe ec_sys 2>/dev/null || true
 
+  # msi_ec also carries debug=1 now (for debug/ec_set, which msi-fan-helper
+  # uses). Reload so an already-loaded module picks the parameter up.
+  if [ -d /sys/devices/platform/msi-ec ]; then
+    /usr/bin/modprobe -r msi_ec 2>/dev/null || true
+    /usr/bin/modprobe msi_ec 2>/dev/null || true
+  fi
+
   # ec_sys's hook normally applies this at load; run it explicitly as well so
   # an already-loaded module (upgrade from an older package) converges.
   /usr/bin/systemd-tmpfiles --create /usr/lib/tmpfiles.d/msi-ec.conf 2>/dev/null || true
@@ -43,6 +50,9 @@ msi-center needs the MSI EC kernel driver and group membership:
 The raw EC image is group-readable only (fan RPM); ec_sys always loads with
 write_support=0, and msi-ec-perms.service plus the ec_sys modprobe hook
 re-apply that grant after every boot and module reload.
+
+Manual fan speed uses msi-fan-helper (setuid root, fan-curve speeds only);
+msi-ec is loaded with debug=1 so it can reach debug/ec_set.
 
 EON
   return 0

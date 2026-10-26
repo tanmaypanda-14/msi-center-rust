@@ -1,0 +1,11 @@
+[package]
+name = "msi-fan-helper"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "msi-fan-helper"
+path = "src/main.rs"
+
+[dependencies]

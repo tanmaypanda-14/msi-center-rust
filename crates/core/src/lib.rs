@@ -6,7 +6,7 @@ pub mod model;
 pub mod platform;
 
 pub use backend::{Error, MsiControl, Result};
-pub use model::{FanMode, ShiftMode, Snapshot};
+pub use model::{FanCurve, FanMode, ShiftMode, Snapshot};
 
 /// The best backend for this machine.
 pub fn default_backend() -> Box<dyn MsiControl> {

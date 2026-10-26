@@ -2352,7 +2352,7 @@ dependencies = [
 
 [[package]]
 name = "msi-center"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "msi-core",
  "msi-theme",
@@ -2363,14 +2363,18 @@ dependencies = [
 
 [[package]]
 name = "msi-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "thiserror 2.0.21",
 ]
 
 [[package]]
+name = "msi-fan-helper"
+version = "0.4.0"
+
+[[package]]
 name = "msi-theme"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "thiserror 2.0.21",
 ]

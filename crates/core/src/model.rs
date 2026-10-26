@@ -83,6 +83,42 @@ impl FanMode {
     }
 }
 
+/// The EC fan curve: six temperature breakpoints and seven speed points.
+///
+/// The EC picks `speeds[0]` below `temps[0]`, `speeds[i]` between
+/// `temps[i-1]` and `temps[i]`, and `speeds[6]` above `temps[5]`. The table is
+/// only consulted in [`FanMode::Advanced`]. Not exposed by msi-ec directly:
+/// it lives at EC `0x6A..0x6F` (temps) and `0x72..0x78` (speeds).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FanCurve {
+    pub temps: [u8; 6],
+    pub speeds: [u8; 7],
+}
+
+impl FanCurve {
+    /// What this board's EC ships with, from the MS-15HK analysis.
+    pub const FACTORY: Self = Self {
+        temps: [54, 58, 62, 66, 77, 93],
+        speeds: [0, 50, 60, 65, 75, 75, 100],
+    };
+
+    /// `Some(percent)` when every point holds the same speed, i.e. the table
+    /// was replaced by a manual override.
+    pub fn flat_percent(&self) -> Option<u8> {
+        let first = self.speeds[0];
+        self.speeds.iter().all(|s| *s == first).then_some(first)
+    }
+
+    /// Comma-separated speed points, the helper's `curve` argument.
+    pub fn speeds_csv(&self) -> String {
+        self.speeds
+            .iter()
+            .map(u8::to_string)
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+}
+
 /// Everything the dashboard needs in one shot.
 #[derive(Debug, Clone, Default)]
 pub struct Snapshot {
@@ -94,6 +130,10 @@ pub struct Snapshot {
     pub cpu_temp_c: Option<f32>,
     pub fan1_rpm: Option<u32>,
     pub fan1_percent: Option<u8>,
+    /// Current EC fan-curve table, when the EC image is readable.
+    pub fan_curve: Option<FanCurve>,
+    /// `true` when a manual speed can actually be written (helper + EC path).
+    pub manual_fan_available: bool,
     pub battery_percent: Option<u8>,
     pub battery_limit: Option<u8>,
     pub ac_online: bool,
@@ -128,5 +168,30 @@ mod tests {
         for mode in FanMode::ALL {
             assert_eq!(FanMode::parse(mode.as_str()), Some(mode));
         }
+    }
+
+    #[test]
+    fn a_flat_curve_is_a_manual_override() {
+        let manual = FanCurve {
+            speeds: [60; 7],
+            ..FanCurve::FACTORY
+        };
+        assert_eq!(manual.flat_percent(), Some(60));
+        assert_eq!(FanCurve::FACTORY.flat_percent(), None);
+    }
+
+    #[test]
+    fn speeds_serialise_for_the_helper() {
+        assert_eq!(
+            FanCurve::FACTORY.speeds_csv(),
+            "0,50,60,65,75,75,100"
+        );
+    }
+
+    #[test]
+    fn factory_curve_matches_the_ec_dump() {
+        // Captured from 0x6A..0x6F / 0x72..0x78 on 15HKEMS1.104.
+        assert_eq!(FanCurve::FACTORY.temps, [54, 58, 62, 66, 77, 93]);
+        assert_eq!(FanCurve::FACTORY.speeds, [0, 50, 60, 65, 75, 75, 100]);
     }
 }

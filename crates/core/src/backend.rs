@@ -30,6 +30,16 @@ pub trait MsiControl: Send + Sync {
     fn set_fan_mode(&self, mode: FanMode) -> Result<()>;
     fn set_cooler_boost(&self, on: bool) -> Result<()>;
 
+    /// Pin every fan-curve point to `percent`, i.e. a fixed fan speed.
+    fn set_manual_fan(&self, _percent: u8) -> Result<()> {
+        Err(Error::Unsupported("manual fan speed"))
+    }
+
+    /// Write the saved (or factory) fan-curve table back to the EC.
+    fn restore_fan_curve(&self) -> Result<()> {
+        Err(Error::Unsupported("fan curve"))
+    }
+
     fn set_battery_limit(&self, _percent: u8) -> Result<()> {
         Err(Error::Unsupported("battery charge limit"))
     }

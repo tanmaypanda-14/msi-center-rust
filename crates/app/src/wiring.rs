@@ -17,6 +17,8 @@ pub fn connect(ui: &AppWindow, backend: Arc<dyn MsiControl>) -> Timer {
     on_set_shift(ui, backend.clone());
     on_set_fan(ui, backend.clone());
     on_toggle_cooler(ui, backend.clone());
+    on_set_manual_fan(ui, backend.clone());
+    on_restore_fan_curve(ui, backend.clone());
     on_set_battery_limit(ui, backend.clone());
     on_cycle_keyboard(ui, backend.clone());
     on_toggle_fnswap(ui, backend.clone());
@@ -73,6 +75,30 @@ fn on_toggle_cooler(ui: &AppWindow, backend: Arc<dyn MsiControl>) {
             "Cooler Boost off"
         };
         finish(&ui, backend.as_ref(), result, message);
+    });
+}
+
+fn on_set_manual_fan(ui: &AppWindow, backend: Arc<dyn MsiControl>) {
+    let weak = ui.as_weak();
+    ui.global::<AppState>().on_set_manual_fan(move |percent| {
+        let Some(ui) = weak.upgrade() else { return };
+        let percent = percent.clamp(20, 100) as u8;
+        let result = backend.set_manual_fan(percent);
+        finish(
+            &ui,
+            backend.as_ref(),
+            result,
+            &format!("Fan fixed at {percent}%"),
+        );
+    });
+}
+
+fn on_restore_fan_curve(ui: &AppWindow, backend: Arc<dyn MsiControl>) {
+    let weak = ui.as_weak();
+    ui.global::<AppState>().on_restore_fan_curve(move || {
+        let Some(ui) = weak.upgrade() else { return };
+        let result = backend.restore_fan_curve();
+        finish(&ui, backend.as_ref(), result, "EC fan curve restored");
     });
 }
 

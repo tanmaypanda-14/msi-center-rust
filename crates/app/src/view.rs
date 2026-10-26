@@ -2,7 +2,7 @@
 //!
 //! All number formatting happens here; the Slint files only lay out strings.
 
-use msi_core::{MsiControl, Result as CoreResult, Snapshot};
+use msi_core::{FanMode, MsiControl, Result as CoreResult, Snapshot};
 use slint::ComponentHandle;
 
 use crate::ui::{AppState, AppWindow};
@@ -93,6 +93,16 @@ pub fn apply(ui: &AppWindow, s: &Snapshot) {
     if let Some(mode) = s.fan_mode {
         state.set_fan_mode(mode.as_str().into());
     }
+
+    // Only pull the slider from the EC while an override is active; otherwise
+    // the one-second refresh would fight the user mid-drag. A flat table only
+    // takes effect in advanced mode, so auto/silent still count as "EC curve".
+    state.set_manual_fan_available(s.manual_fan_available);
+    let manual = s.fan_curve.and_then(|curve| curve.flat_percent());
+    if let Some(percent) = manual {
+        state.set_manual_fan(percent as i32);
+    }
+    state.set_manual_fan_active(manual.is_some() && s.fan_mode == Some(FanMode::Advanced));
 
     let level = s.keyboard_brightness.unwrap_or(0);
     let max = s.keyboard_brightness_max.unwrap_or(0);

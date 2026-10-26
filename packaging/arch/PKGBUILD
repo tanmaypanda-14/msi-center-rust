@@ -26,6 +26,10 @@ package() {
   cd "$srcdir/msi-center-rust"
 
   install -Dm755 target/release/msi-center "$pkgdir/usr/bin/msi-center"
+  # setuid root: the only way to reach msi-ec's raw-write node. It accepts a
+  # fan speed only, so it cannot be used to touch other EC registers.
+  install -Dm755 target/release/msi-fan-helper "$pkgdir/usr/bin/msi-fan-helper"
+  chmod 4755 "$pkgdir/usr/bin/msi-fan-helper"
   install -Dm644 packaging/msi-center.desktop "$pkgdir/usr/share/applications/msi-center.desktop"
   install -Dm644 packaging/msi-center.svg \
     "$pkgdir/usr/share/icons/hicolor/scalable/apps/msi-center.svg"

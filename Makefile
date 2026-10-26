@@ -33,7 +33,7 @@ run: release      ## build in the container, run on the host (needs the EC + a s
 
 dist: release      ## release tarball + checksum in ./dist
 	mkdir -p $(DIST)
-	cp target/release/msi-center $(DIST)/
+	cp target/release/msi-center target/release/msi-fan-helper $(DIST)/
 	cp packaging/msi-center.desktop packaging/msi-center.svg $(DIST)/
 	cp LICENSE README.md INSTALL.md $(DIST)/
 	tar -C dist -czf $(DIST).tar.gz $(notdir $(DIST))

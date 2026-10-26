@@ -22,6 +22,21 @@ pub fn snapshot(backend: &dyn MsiControl) -> i32 {
     println!("cpu temp     {:?}", snapshot.cpu_temp_c);
     println!("fan rpm      {:?}", snapshot.fan1_rpm);
     println!("fan level    {:?}", snapshot.fan1_percent);
+    println!(
+        "fan curve    {}",
+        snapshot
+            .fan_curve
+            .map(|curve| curve.speeds_csv())
+            .unwrap_or_else(|| "not readable".to_owned())
+    );
+    println!(
+        "manual fan   {}",
+        if snapshot.manual_fan_available {
+            "available"
+        } else {
+            "unavailable"
+        }
+    );
     println!("battery      {:?}%", snapshot.battery_percent);
     println!("charge limit {:?}%", snapshot.battery_limit);
     println!("ac online    {}", snapshot.ac_online);
@@ -54,6 +69,11 @@ pub fn set(backend: &dyn MsiControl, key: &str, value: &str) -> i32 {
             Some(on) => backend.set_cooler_boost(on),
             None => bad("boolean", value),
         },
+        "fanlevel" => match value.parse::<u8>() {
+            Ok(percent) => backend.set_manual_fan(percent),
+            Err(_) => bad("percent", value),
+        },
+        "fanrestore" => backend.restore_fan_curve(),
         "battery" => match value.parse::<u8>() {
             Ok(percent) => backend.set_battery_limit(percent),
             Err(_) => bad("percent", value),

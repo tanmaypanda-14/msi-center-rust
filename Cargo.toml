@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["crates/core", "crates/theme", "crates/app"]
+members = ["crates/core", "crates/theme", "crates/app", "crates/helper"]
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/tanmaypanda-14/msi-center-rust"

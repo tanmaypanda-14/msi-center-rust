@@ -84,8 +84,9 @@ sudo modprobe ec_sys write_support=0
 dd if=/sys/kernel/debug/ec/ec0/io bs=1 skip=204 count=2 2>/dev/null | od -An -tu1
 ```
 
-Make it persistent and **read-only** (this app never writes raw EC memory). The
-Arch package already ships this as `/usr/lib/modprobe.d/msi-ec.conf`; when
+Make it persistent and **read-only**. The app itself never writes raw EC memory;
+the optional fan helper writes msi-ec's `debug/ec_set` instead, never this file.
+The Arch package already ships this as `/usr/lib/modprobe.d/msi-ec.conf`; when
 building from source, install
 [`packaging/msi-ec-modprobe.conf`](packaging/msi-ec-modprobe.conf) there (or as
 `/etc/modprobe.d/msi-ec.conf`). It contains:
@@ -166,6 +167,40 @@ purpose — that is all the RPM calculation needs).
 > appear after the udev event. Re-run the `udevadm trigger` line above; the
 > dedicated `BAT1` rule matches `add|change` and will converge on the next
 > event.
+
+### Manual fan speed (optional)
+
+`msi-ec` does not export the fan curve, so "run the fan at 60%" means writing
+the seven speed points at EC `0x72..0x78`. That is the only raw EC write in the
+project, and it is confined to a setuid helper:
+
+```sh
+sudo install -Dm755 target/release/msi-fan-helper /usr/bin/msi-fan-helper
+sudo chmod 4755 /usr/bin/msi-fan-helper
+msi-fan-helper check          # "ok: EC write path available"
+```
+
+It accepts `manual <20-100>`, `curve <s0,…,s6>` and `check` — no address, no
+value, no file path. A compromised caller can pick a fan speed and nothing
+else; it cannot reach another EC register. Manual speeds below 20% are refused,
+because there the EC would let the CPU throttle instead of cooling it.
+
+The helper writes msi-ec's `debug/ec_set`, which the driver creates only when
+loaded with `debug=1`. The packaged `/usr/lib/modprobe.d/msi-ec.conf` sets it;
+reload the module to pick it up:
+
+```sh
+sudo modprobe -r msi_ec && sudo modprobe msi_ec
+```
+
+`debug/ec_set` is mode `0200` owned by root, so this needs no udev or group
+change and the rest of the app is unaffected. Without it, the Cooling page
+disables the manual slider and shows why.
+
+The app archives the curve it found before the first override in
+`$XDG_STATE_HOME/msi-center/fan-curve.orig` (usually
+`~/.local/state/msi-center/fan-curve.orig`), so *Restore EC curve* puts this
+machine's own table back rather than a hard-coded one.
 
 ## 4. Install the app
 

@@ -5,17 +5,20 @@
 //!
 //! * fan tachometer   `0xCC/0xCD` (2-byte big-endian tick counter), `rpm = 480000 / ticks`
 //! * fan level        `0x71`, exported by the driver as `cpu/realtime_fan_speed` (not RPM)
+//! * fan curve        `0x6A..0x6F` temperatures, `0x72..0x78` speeds (EC only)
 //! * shift mode       `eco` / `comfort` / `sport`
 //! * fan mode         `auto` / `silent` / `advanced`
 //!
 //! The raw EC file is opened read-only and only when the driver exposes no
-//! equivalent; nothing here writes to raw EC memory.
+//! equivalent; the only writes to raw EC memory go through the setuid
+//! `msi-fan-helper`, which can touch the fan-speed registers and nothing else.
 
 use crate::backend::{Error, MsiControl, Result};
-use crate::model::{FanMode, ShiftMode, Snapshot};
+use crate::model::{FanCurve, FanMode, ShiftMode, Snapshot};
 use std::fs;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 const MEC: &str = "/sys/devices/platform/msi-ec";
 const BAT: &str = "/sys/class/power_supply/BAT1";
@@ -24,12 +27,29 @@ const KBD: &str = "/sys/class/leds/msiacpi::kbd_backlight";
 const DMI: &str = "/sys/class/dmi/id";
 const RAW_EC_CANDIDATES: [&str; 2] = ["/sys/kernel/debug/ec/ec0/io", "/dev/ec"];
 
+/// setuid helper that owns the fan-curve writes. Checked in order, so a
+/// tarball install into /usr/local/bin works as well as the package.
+const FAN_HELPERS: [&str; 2] = [
+    "/usr/bin/msi-fan-helper",
+    "/usr/local/bin/msi-fan-helper",
+];
+/// Development override, so the app can be pointed at a freshly built helper.
+const FAN_HELPER_ENV: &str = "MSI_CENTER_FAN_HELPER";
+
+/// Lowest manual speed the helper accepts; below this the EC would let the CPU
+/// throttle rather than cool it.
+const MANUAL_MIN: u8 = 20;
+
 /// Fan tachometer register pair.
 const FAN_TICK_HI: u64 = 0xCC;
 /// Ticks-to-RPM constant used by MControlCenter for this EC generation.
 const FAN_TICK_CONST: u32 = 480_000;
 /// Anything above this is a torn/garbage read rather than a real fan speed.
 const FAN_RPM_CEILING: u32 = 15_000;
+
+/// Fan-curve tables in EC memory.
+const CURVE_TEMPS: u8 = 0x6A;
+const CURVE_SPEEDS: u8 = 0x72;
 
 pub struct MsiEcBackend {
     root: PathBuf,
@@ -113,9 +133,127 @@ impl MsiEcBackend {
         ticks_from_ec_dump(&dump)
     }
 
+    /// `len` bytes of the raw EC image at `addr`, read-only.
+    fn read_ec(&self, addr: u8, len: usize) -> Option<Vec<u8>> {
+        let path = self.raw_ec.as_ref()?;
+        let mut file = fs::File::open(path).ok()?;
+        file.seek(SeekFrom::Start(u64::from(addr))).ok()?;
+        let mut buf = vec![0u8; len];
+        file.read_exact(&mut buf).ok()?;
+        Some(buf)
+    }
+
+    /// The live fan-curve table, when the EC image is readable. Needs no
+    /// privileges on this board: the tmpfiles rule grants group read.
+    fn fan_curve(&self) -> Option<FanCurve> {
+        let temps = self.read_ec(CURVE_TEMPS, 6)?;
+        let speeds = self.read_ec(CURVE_SPEEDS, 7)?;
+        Some(FanCurve {
+            temps: temps.try_into().ok()?,
+            speeds: speeds.try_into().ok()?,
+        })
+    }
+
+    /// A manual speed needs both the helper and the driver's raw-write node.
+    fn manual_fan_available(&self) -> bool {
+        helper_path().exists() && self.root.join("debug/ec_set").exists()
+    }
+
+    /// Remember the curve as it was before the first manual override, so
+    /// "restore" puts back what this EC actually shipped with.
+    fn save_curve_once(&self) {
+        let Some(path) = state_file() else {
+            return;
+        };
+        if path.exists() {
+            return;
+        }
+        let Some(curve) = self.fan_curve() else {
+            return;
+        };
+        if curve.flat_percent().is_some() {
+            return; // already an override; never overwrite the original
+        }
+        if let Some(dir) = path.parent() {
+            let _ = fs::create_dir_all(dir);
+        }
+        let _ = fs::write(path, curve.speeds_csv());
+    }
+
+    fn saved_curve(&self) -> Option<FanCurve> {
+        let raw = fs::read_to_string(state_file()?).ok()?;
+        parse_speeds(&raw).map(|speeds| FanCurve {
+            speeds,
+            ..FanCurve::FACTORY
+        })
+    }
+
     fn battery_path(&self, name: &str) -> PathBuf {
         Path::new(BAT).join(name)
     }
+}
+
+/// The first installed helper: `/usr/bin/msi-fan-helper`, falling back to
+/// `/usr/local/bin`, or the path in `MSI_CENTER_FAN_HELPER` while developing.
+/// The helper itself never reads the environment.
+fn helper_path() -> PathBuf {
+    if let Some(path) = std::env::var_os(FAN_HELPER_ENV).map(PathBuf::from) {
+        if path.exists() {
+            return path;
+        }
+    }
+    FAN_HELPERS
+        .iter()
+        .map(PathBuf::from)
+        .find(|path| path.exists())
+        .unwrap_or_else(|| PathBuf::from(FAN_HELPERS[0]))
+}
+
+/// `$XDG_STATE_HOME/msi-center/fan-curve.orig`, per the XDG base-dir spec.
+fn state_file() -> Option<PathBuf> {
+    let base = std::env::var_os("XDG_STATE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state"))
+        })?;
+    Some(base.join("msi-center").join("fan-curve.orig"))
+}
+
+fn parse_speeds(raw: &str) -> Option<[u8; 7]> {
+    let mut out = [0u8; 7];
+    let mut seen = 0;
+    for (index, part) in raw.trim().split(',').enumerate() {
+        if index >= 7 {
+            return None;
+        }
+        out[index] = part.trim().parse().ok()?;
+        seen += 1;
+    }
+    (seen == 7).then_some(out)
+}
+
+/// Run the setuid helper and surface its stderr verbatim.
+fn run_helper(args: &[&str]) -> Result<()> {
+    let path = helper_path();
+    if !path.exists() {
+        return Err(Error::Backend(format!(
+            "{} is not installed - reinstall msi-center to get the fan helper",
+            path.display()
+        )));
+    }
+
+    let output = Command::new(&path).args(args).output().map_err(Error::Io)?;
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let detail = stderr.trim();
+    Err(Error::Backend(if detail.is_empty() {
+        format!("{} exited with {}", path.display(), output.status)
+    } else {
+        detail.to_owned()
+    }))
 }
 
 fn is_readable(path: &Path) -> bool {
@@ -157,6 +295,8 @@ impl MsiControl for MsiEcBackend {
             .map(|v| v.min(100) as u8);
 
         snap.fan1_rpm = self.fan_rpm();
+        snap.fan_curve = self.fan_curve();
+        snap.manual_fan_available = self.manual_fan_available();
 
         snap.battery_percent = self
             .read_u32(self.battery_path("capacity").as_path())
@@ -190,6 +330,21 @@ impl MsiControl for MsiEcBackend {
 
     fn set_cooler_boost(&self, on: bool) -> Result<()> {
         self.write_mec("cooler_boost", if on { "on" } else { "off" })
+    }
+
+    fn set_manual_fan(&self, percent: u8) -> Result<()> {
+        if !(MANUAL_MIN..=100).contains(&percent) {
+            return Err(Error::Backend(format!(
+                "manual fan speed {percent}% is out of range ({MANUAL_MIN}-100)"
+            )));
+        }
+        self.save_curve_once();
+        run_helper(&["manual", &percent.to_string()])
+    }
+
+    fn restore_fan_curve(&self) -> Result<()> {
+        let curve = self.saved_curve().unwrap_or(FanCurve::FACTORY);
+        run_helper(&["curve", &curve.speeds_csv()])
     }
 
     fn set_battery_limit(&self, percent: u8) -> Result<()> {
@@ -290,5 +445,16 @@ mod tests {
         assert_eq!(rpm_from_ticks(120), 4000);
         // 480000 / 1 is nonsense and must not reach the UI
         assert_eq!(rpm_from_ticks(1), 0);
+    }
+
+    #[test]
+    fn parses_seven_speed_points() {
+        assert_eq!(
+            parse_speeds("0,50,60,65,75,75,100\n"),
+            Some([0, 50, 60, 65, 75, 75, 100])
+        );
+        assert_eq!(parse_speeds("0,50,60"), None);
+        assert_eq!(parse_speeds("0,50,60,65,75,75,100,1"), None);
+        assert_eq!(parse_speeds("0,50,60,65,75,75,x"), None);
     }
 }

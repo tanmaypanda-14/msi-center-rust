@@ -54,6 +54,8 @@ sudo usermod -aG msi-ec $USER # then log out and back in
 ```sh
 tar xf msi-center-0.3.0-x86_64-linux.tar.gz
 sudo install -Dm755 msi-center-0.3.0-x86_64-linux/msi-center /usr/local/bin/msi-center
+sudo install -Dm755 msi-center-0.3.0-x86_64-linux/msi-fan-helper /usr/local/bin/msi-fan-helper
+sudo chmod 4755 /usr/local/bin/msi-fan-helper   # optional: manual fan speed
 ```
 
 Either way, the machine also needs the **`msi-ec` kernel driver** (it cannot be
@@ -121,6 +123,7 @@ switching themes. Details and the full token table:
 docker/Dockerfile      build image: Rust + Slint build deps only
 docker-compose.yml     dev container; host /sys mounted read-only
 crates/core            domain model + MsiControl seam + msi-ec backend
+crates/helper          msi-fan-helper: setuid, fan-curve writes only
 crates/theme           Omarchy colors.toml → semantic tokens; no Slint, no TOML crate
 crates/app             window: Slint views + the Rust bridge
   src/cli.rs             argument parsing and usage text
@@ -167,6 +170,11 @@ attributes writable by the `msi-ec` group (see `omarchy-msi-power`):
 /sys/class/leds/msiacpi::kbd_backlight/
 ```
 
+Manual fan speed is the one setting that is not a plain sysfs write: the EC
+fan curve is not exported, so `/usr/bin/msi-fan-helper` — setuid root, and
+able to accept a fan speed and nothing else — writes msi-ec's `debug/ec_set`.
+See [INSTALL.md](INSTALL.md#manual-fan-speed-optional).
+
 If the driver is missing the app falls back to a mock backend so the UI still
 runs.
 
@@ -176,6 +184,8 @@ runs.
 msi-center --snapshot            # print everything the UI shows
 msi-center --set fan=silent      # shift=eco|comfort|sport, fan=auto|silent|advanced
 msi-center --set cooler=on       # battery=60..100, kbd=N
+msi-center --set fanlevel=70     # pin the fan to 70% (needs msi-fan-helper)
+msi-center --set fanrestore=1    # hand the fan back to the EC curve
 msi-center --set fnswap=on       # swap Fn/Win (off = standard layout)
 msi-center --set webcam=on       # EC-level camera block
 msi-center --page 2              # open on a given page (0-3)

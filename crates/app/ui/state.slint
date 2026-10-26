@@ -26,6 +26,11 @@ export global AppState {
     in-out property <string> shift-mode: "comfort";
     in-out property <string> fan-mode: "auto";
 
+    // Manual fan speed: writes a flat fan curve to the EC through the helper.
+    in-out property <bool> manual-fan-available: false;
+    in-out property <bool> manual-fan-active: false;
+    in-out property <int> manual-fan: 50;
+
     in-out property <int> kbd-level: 0;
     in-out property <int> kbd-max: 0;
     in-out property <string> kbd-label: "";
@@ -36,6 +41,8 @@ export global AppState {
     callback set-shift(string);
     callback set-fan(string);
     callback toggle-cooler();
+    callback set-manual-fan(int);
+    callback restore-fan-curve();
     callback set-battery-limit(int);
     callback cycle-keyboard();
     callback toggle-webcam();

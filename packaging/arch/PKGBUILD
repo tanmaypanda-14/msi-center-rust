@@ -1,7 +1,7 @@
 # Maintainer: Tanmay Panda <tanmay404103@outlook.com>
 
 pkgname=msi-center
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Lightweight native replacement for MSI Center, driven by msi-ec"
 arch=('x86_64')
@@ -10,8 +10,8 @@ license=('MIT')
 depends=('fontconfig' 'freetype2')
 makedepends=('cargo' 'rust' 'git')
 optdepends=('msi-ec-dkms: kernel driver required for real hardware')
-# Pinned source snapshot: 0.3.0 (themed UI, modular shell, self-update).
-_commit=6c793b461aac460e34d8966a761bca011ca34112
+# Pinned source snapshot: 0.4.0 (manual fan speed via msi-fan-helper).
+_commit=3d967086457a16f02cf73a1cdbafa966f67b4709
 source=("git+$url.git#commit=$_commit")
 sha256sums=('SKIP')
 install=msi-center.install
